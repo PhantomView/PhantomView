@@ -1,0 +1,206 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=340, initial-scale=1.0">
+  <title>PhantomView Chat Overlay</title>
+  <link rel="stylesheet" href="popup.css">
+  <style>
+    body {
+      margin: 0;
+      background: #181818;
+      color: #fff;
+      font-family: Arial, sans-serif;
+      width: 340px;
+      height: 420px;
+      display: flex;
+      flex-direction: column;
+      user-select: none;
+      min-width: 220px;
+      min-height: 180px;
+      box-sizing: border-box;
+      overflow: hidden;
+    }
+    #drag-handle {
+      width: 100%;
+      height: 28px;
+      background: #181818;
+      cursor: move;
+      border-radius: 10px 10px 0 0;
+      margin-bottom: 2px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 10px;
+      box-sizing: border-box;
+      border-bottom: 1px solid #232323;
+    }
+    #phantomview-brand {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      font-weight: bold;
+      font-size: 15px;
+      color: #fff;
+    }
+    #phantomview-brand img {
+      width: 18px;
+      height: 18px;
+      border-radius: 4px;
+    }
+    #pin-btn {
+      background: none;
+      border: none;
+      color: #e0e0e0;
+      font-size: 18px;
+      cursor: pointer;
+      padding: 0 2px;
+    }
+    #minimize-btn {
+      background: none;
+      border: none;
+      color: #e0e0e0;
+      font-size: 18px;
+      cursor: pointer;
+      padding: 0 2px;
+      margin-left: 8px;
+    }
+    #close-btn {
+      background: none;
+      border: none;
+      color: #e0e0e0;
+      font-size: 18px;
+      cursor: pointer;
+      padding: 0 2px;
+      margin-left: 8px;
+    }
+    #close-btn:hover {
+      color: #ff4444;
+    }
+    #chat {
+      flex: 1;
+      display: flex;
+      flex-direction: row;
+      overflow: hidden;
+      min-height: 0;
+      border-radius: 0 0 10px 10px;
+      border: 1px solid #232323;
+      background: #181818;
+    }
+    #messages-section {
+      flex: 2;
+      background: #181818;
+      border-radius: 0 0 0 10px;
+      border-right: 1px solid #232323;
+      display: flex;
+      flex-direction: column;
+      height: 100%;
+      min-width: 0;
+    }
+    #users-section {
+      flex: 1;
+      background: #181818;
+      border-radius: 0 0 10px 0;
+      display: flex;
+      flex-direction: column;
+      height: 100%;
+      min-width: 0;
+    }
+    .section-header {
+      font-size: 13px;
+      font-weight: bold;
+      padding: 4px 8px 2px 8px;
+      border-bottom: 1px solid #232323;
+      letter-spacing: 0.5px;
+      color: #e0e0e0;
+      background: #181818;
+    }
+    #messages {
+      flex: 1;
+      padding: 10px;
+      overflow-y: auto;
+      font-size: 14px;
+      background: #181818;
+      min-width: 0;
+      word-break: break-word;
+      max-height: 100%;
+      color: #fff;
+    }
+    #users {
+      flex: 1;
+      padding: 10px 6px;
+      overflow-y: auto;
+      font-size: 13px;
+      min-width: 0;
+      max-height: 100%;
+      color: #e0e0e0;
+      background: #181818;
+    }
+    #input {
+      display: flex;
+      border-top: 1px solid #232323;
+      background: #181818;
+      padding: 7px 6px;
+      box-sizing: border-box;
+    }
+    #input input {
+      flex: 1;
+      background: #232323;
+      border: none;
+      color: #fff;
+      padding: 6px 10px;
+      border-radius: 4px;
+      font-size: 14px;
+      min-width: 0;
+    }
+    #input button {
+      background: #232323;
+      border: none;
+      color: #fff;
+      padding: 6px 14px;
+      margin-left: 6px;
+      border-radius: 4px;
+      cursor: pointer;
+      font-size: 14px;
+      transition: background 0.2s;
+    }
+    #input button:hover {
+      background: #333;
+    }
+  </style>
+</head>
+<body>
+  <div id="drag-handle">
+    <div id="phantomview-brand">
+      <img src="icons/icon32.png" alt="PhantomView" />
+      PhantomView
+    </div>
+    <div style="display: flex; align-items: center;">
+      <button id="minimize-btn" type="button" title="Minimize">
+        <svg width="16" height="16" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <rect x="4" y="9" width="12" height="2" rx="1" fill="currentColor"/>
+        </svg>
+      </button>
+      <button id="close-btn" type="button" title="Close">
+        <svg width="16" height="16" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <path d="M6 6L14 14M14 6L6 14" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+        </svg>
+      </button>
+    </div>
+  </div>
+  <div id="chat">
+    <div id="messages-section">
+      <div class="section-header">Chat</div>
+      <div id="messages"></div>
+    </div>
+    <div id="users-section">
+      <div class="section-header">Users</div>
+      <div id="users"></div>
+    </div>
+  </div>
+  <div id="input">
+    <input type="text" id="msg-input" placeholder="Type..." autocomplete="off" />
+    <button id="send-btn">Send</button>
+  </div>
+  <script src="overlay.js"></script>
+</body>

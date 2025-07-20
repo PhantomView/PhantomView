@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>PhantomView</title>
+  <link rel="stylesheet" href="popup.css">
+</head>
+<body>
+  <div id="app">
+    <header>
+      <img src="icons/icon48.png" alt="PhantomView Logo" width="28" height="28">
+      <span class="title">PhantomView</span>
+    </header>
+    
+    <!-- Username Setup Screen -->
+    <div id="username-screen" class="setup-screen">
+      <div class="setup-title">Enter Your Username</div>
+      <input type="text" id="username-input" placeholder="Enter username" class="setup-input">
+      <button id="continue-btn" class="setup-button">Continue</button>
+    </div>
+
+    <!-- Website Selection Screen -->
+    <div id="website-screen" class="setup-screen" style="display: none;">
+      <div class="setup-title">Select Website</div>
+      <div class="user-info">Username: <span id="display-username"></span></div>
+      <div class="website-options">
+        <button id="bullx-btn" class="website-button">BullX</button>
+        <button id="axiom-btn" class="website-button">Axiom</button>
+      </div>
+      <button id="back-to-username-btn" class="back-button">Back</button>
+    </div>
+
+    <!-- Coin Token Screen -->
+    <div id="coin-screen" class="setup-screen" style="display: none;">
+      <div class="setup-title">Enter Coin Token</div>
+      <div class="user-info">Username: <span id="display-username-2"></span></div>
+      <div class="website-info">Website: <span id="display-website"></span></div>
+      <input type="text" id="coin-input" placeholder="Enter coin token" class="setup-input">
+      <button id="join-channel-btn" class="setup-button">Join Channel</button>
+      <button id="back-to-website-btn" class="back-button">Back</button>
+    </div>
+
+    <!-- Social Media Section -->
+    <div class="social-section">
+      <div class="social-title">Follow Us</div>
+      <div class="social-buttons">
+        <a href="https://x.com/PhantomView0x" target="_blank" id="x-button" class="social-link">
+          <img src="icons/x-logo.png" alt="X (Twitter)" class="social-icon">
+        </a>
+        <a href="https://github.com/PhantomView/PhantomView" target="_blank" id="github-button" class="social-link">
+          <img src="icons/gitbook.png" alt="GitHub" class="social-icon">
+        </a>
+        <a href="https://t.me/Phantom_View" target="_blank" id="telegram-button" class="social-link">
+          <img src="icons/tele.png" alt="Telegram" class="social-icon">
+        </a>
+      </div>
+    </div>
+  </div>
+  <script src="popup.js"></script>
+</body>
+</html> 
