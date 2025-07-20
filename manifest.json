@@ -39,10 +39,22 @@
   ],
   "web_accessible_resources": [
     {
-      "resources": ["overlay.html", "overlay.js", "popup.css"],
+      "resources": [
+        "overlay.html",
+        "overlay.js",
+        "popup.css",
+        "icons/icon18.png",
+        "icons/icon28.png",
+        "icons/icon32.png",
+        "icons/icon56.png",
+        "security-utils.js"
+      ],
       "matches": ["<all_urls>"]
     }
   ],
+  "content_security_policy": {
+    "extension_pages": "script-src 'self'; object-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: https:; connect-src 'self' https://api.mainnet-beta.solana.com; frame-src 'none';"
+  },
   "icons": {
     "16": "icons/icon16.png",
     "32": "icons/icon32.png",
