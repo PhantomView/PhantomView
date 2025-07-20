@@ -1,0 +1,48 @@
+{
+  "name": "@phantomview/phantomview",
+  "version": "0.2.5",
+  "description": "A live chat extension for Solana memecoin traders. Chat with others viewing the same token on BullX or Axiom in real-time.",
+  "main": "background.js",
+  "scripts": {
+    "build": "echo 'Chrome extension - no build step required'",
+    "test": "echo 'No tests specified'"
+  },
+  "keywords": [
+    "chrome-extension",
+    "solana",
+    "trading",
+    "chat",
+    "memecoin",
+    "bullx",
+    "axiom",
+    "real-time",
+    "crypto"
+  ],
+  "author": "PhantomView <developer@phantomview.org>",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/PhantomView/PhantomView.git"
+  },
+  "bugs": {
+    "url": "https://github.com/PhantomView/PhantomView/issues"
+  },
+  "homepage": "https://github.com/PhantomView/PhantomView#readme",
+  "files": [
+    "manifest.json",
+    "background.js",
+    "content.js",
+    "popup.html",
+    "popup.js",
+    "popup.css",
+    "overlay.html",
+    "overlay.js",
+    "icons/",
+    "README.md",
+    "CHANGELOG.md",
+    "LICENSE"
+  ],
+  "publishConfig": {
+    "registry": "https://npm.pkg.github.com"
+  }
+} 
