@@ -88,12 +88,7 @@ A live chat extension for Solana memecoin traders. Chat with others viewing the 
 - **Storage Efficiency**: Better data management
 - **Memory Management**: Automatic cleanup of unused resources
 
-## 📋 Migration from v1.0
 
-If you're upgrading from v1.0:
-- Previous chat history format has been updated
-- You'll need to re-enter your username on first use
-- New channel system provides better token isolation
 
 ## 🤝 Contributing
 

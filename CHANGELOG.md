@@ -1,6 +1,6 @@
 # PhantomView Changelog
 
-## [0.2.5] - 2024-01-XX
+## [0.2.5] - 2025-01-XX
 
 ### ✨ New Features
 - **Multi-Screen Setup Flow**: Complete redesign with username entry, website selection, and token input
