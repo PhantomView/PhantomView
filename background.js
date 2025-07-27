@@ -882,6 +882,7 @@ function openChatroom(tabId, username, caAddress, coinName) {
                 position: absolute !important;
                 top: -8px !important;
                 display: flex !important;
+                flex-direction: row !important;
                 gap: 4px !important;
                 z-index: 2147483648 !important;
             }
