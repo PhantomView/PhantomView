@@ -2,7 +2,7 @@
   "manifest_version": 3,
   "name": "PhantomView",
   "version": "0.8.7",
-  "description": "Live viewer analytics and chat interface for Solana memecoins",
+  "description": "Real-time viewer analytics & embedded chat for Solana trading platforms.",
   "permissions": [
     "activeTab",
     "storage",
