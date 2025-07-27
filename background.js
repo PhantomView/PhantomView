@@ -1470,10 +1470,12 @@ function openChatroom(tabId, username, caAddress, coinName) {
                             console.log('Refreshing reactions for message:', messageKey, 'Data:', reactionsData);
                             let reactionsHTML = '';
                             if (reactionsData && typeof reactionsData === 'object' && Object.keys(reactionsData).length > 0) {
-                                Object.entries(reactionsData).forEach(([emoji, count]) => {
-                                    if (count > 0) {
-                                        reactionsHTML += `<div class="persistent-reaction">${emoji} ${count}</div>`;
-                                    }
+                                // Use the order they appear in the data (order they were added)
+                                const sortedReactions = Object.entries(reactionsData)
+                                    .filter(([emoji, count]) => count > 0);
+                                
+                                sortedReactions.forEach(([emoji, count]) => {
+                                    reactionsHTML += `<div class="persistent-reaction">${emoji} ${count}</div>`;
                                 });
                             }
                             
