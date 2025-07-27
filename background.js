@@ -856,7 +856,7 @@ function openChatroom(tabId, username, caAddress, coinName) {
             }
             .message-reactions {
                 position: absolute !important;
-                bottom: -60px !important;
+                top: -60px !important;
                 right: 0 !important;
                 background: rgba(17, 17, 17, 0.98) !important;
                 border: 2px solid rgba(255, 255, 255, 0.3) !important;
@@ -1360,20 +1360,7 @@ function openChatroom(tabId, username, caAddress, coinName) {
                     }
                 }
                 
-                // Check if popup would be cut off at bottom and adjust vertical position
-                const chatContainer = document.querySelector('.chatroom-messages');
-                if (chatContainer) {
-                    const containerRect = chatContainer.getBoundingClientRect();
-                    const popupHeight = 60; // Approximate height of popup
-                    const messageBottom = messageRect.bottom;
-                    const containerBottom = containerRect.bottom;
-                    
-                    // If popup would extend below container, position it above the message
-                    if (messageBottom + popupHeight > containerBottom) {
-                        reactionsPopup.style.bottom = 'auto';
-                        reactionsPopup.style.top = '-60px';
-                    }
-                }
+
                 
                 // Function to hide reactions
                 function hideReactions() {
