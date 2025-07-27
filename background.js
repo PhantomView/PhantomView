@@ -833,6 +833,7 @@ function openChatroom(tabId, username, caAddress, coinName) {
                 padding: 8px 12px !important;
                 max-width: 80% !important;
                 word-wrap: break-word !important;
+                position: relative !important;
             }
             .message.own {
                 background: rgba(255, 255, 255, 0.1) !important;
@@ -855,18 +856,19 @@ function openChatroom(tabId, username, caAddress, coinName) {
             }
             .message-reactions {
                 position: absolute !important;
-                bottom: -50px !important;
+                bottom: -45px !important;
                 right: 0 !important;
                 background: rgba(17, 17, 17, 0.98) !important;
                 border: 2px solid rgba(255, 255, 255, 0.3) !important;
                 border-radius: 12px !important;
-                padding: 12px !important;
+                padding: 8px !important;
                 display: flex !important;
-                gap: 12px !important;
+                gap: 8px !important;
                 z-index: 2147483649 !important;
                 backdrop-filter: blur(15px) !important;
                 box-shadow: 0 8px 25px rgba(0, 0, 0, 0.5) !important;
                 animation: fadeIn 0.2s ease-out !important;
+                min-width: 120px !important;
             }
             @keyframes fadeIn {
                 from { opacity: 0; transform: translateY(10px); }
