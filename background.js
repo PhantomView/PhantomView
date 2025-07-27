@@ -1252,7 +1252,6 @@ function openChatroom(tabId, username, caAddress, coinName) {
             
             // Reaction functionality
             function addReactionFunctionality(messageElement) {
-                const messageContent = messageElement.querySelector('.message-content');
                 let reactionTimeout = null;
                 let reactions = {
                     '❤️': 0,
@@ -1260,25 +1259,25 @@ function openChatroom(tabId, username, caAddress, coinName) {
                     '👎': 0
                 };
                 
-                // Add hold event listener with better detection
-                messageContent.addEventListener('mousedown', function(e) {
-                    console.log('Mouse down on message - starting hold timer');
+                // Add hold event listener with better detection to the entire message bubble
+                messageElement.addEventListener('mousedown', function(e) {
+                    console.log('Mouse down on message bubble - starting hold timer', messageElement.dataset.messageKey);
                     reactionTimeout = setTimeout(() => {
-                        console.log('Hold timer completed - showing reactions');
+                        console.log('Hold timer completed - showing reactions', messageElement.dataset.messageKey);
                         showReactions(messageElement, reactions);
                     }, 200); // 200ms hold (much faster)
                 });
                 
-                messageContent.addEventListener('mouseup', function(e) {
-                    console.log('Mouse up on message - clearing hold timer');
+                messageElement.addEventListener('mouseup', function(e) {
+                    console.log('Mouse up on message bubble - clearing hold timer');
                     if (reactionTimeout) {
                         clearTimeout(reactionTimeout);
                         reactionTimeout = null;
                     }
                 });
                 
-                messageContent.addEventListener('mouseleave', function(e) {
-                    console.log('Mouse leave on message - clearing hold timer');
+                messageElement.addEventListener('mouseleave', function(e) {
+                    console.log('Mouse leave on message bubble - clearing hold timer');
                     if (reactionTimeout) {
                         clearTimeout(reactionTimeout);
                         reactionTimeout = null;
@@ -1286,16 +1285,16 @@ function openChatroom(tabId, username, caAddress, coinName) {
                 });
                 
                 // Add touch events for mobile support
-                messageContent.addEventListener('touchstart', function(e) {
-                    console.log('Touch start on message - starting hold timer');
+                messageElement.addEventListener('touchstart', function(e) {
+                    console.log('Touch start on message bubble - starting hold timer');
                     reactionTimeout = setTimeout(() => {
-                        console.log('Touch hold timer completed - showing reactions');
+                        console.log('Touch hold timer completed - showing reactions', messageElement.dataset.messageKey);
                         showReactions(messageElement, reactions);
                     }, 200); // 200ms hold (much faster)
                 });
                 
-                messageContent.addEventListener('touchend', function(e) {
-                    console.log('Touch end on message - clearing hold timer');
+                messageElement.addEventListener('touchend', function(e) {
+                    console.log('Touch end on message bubble - clearing hold timer');
                     if (reactionTimeout) {
                         clearTimeout(reactionTimeout);
                         reactionTimeout = null;
@@ -1303,7 +1302,7 @@ function openChatroom(tabId, username, caAddress, coinName) {
                 });
                 
                 // Prevent context menu on long press
-                messageContent.addEventListener('contextmenu', function(e) {
+                messageElement.addEventListener('contextmenu', function(e) {
                     e.preventDefault();
                 });
             }
