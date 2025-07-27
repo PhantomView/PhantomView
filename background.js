@@ -1417,6 +1417,7 @@ function openChatroom(tabId, username, caAddress, coinName) {
             function updateMessageReaction(messageKey, reaction, caAddress) {
                 const sanitizedCA = caAddress.replace(/[^A-Za-z0-9]/g, '');
                 const messageRef = `${firebaseConfig.databaseURL}/chats/${sanitizedCA}/activeMessages/${messageKey}/reactions/${reaction}.json`;
+                const orderRef = `${firebaseConfig.databaseURL}/chats/${sanitizedCA}/activeMessages/${messageKey}/reactionOrder.json`;
                 
                 console.log('Updating reaction:', reaction, 'for message:', messageKey, 'at URL:', messageRef);
                 
@@ -1432,6 +1433,7 @@ function openChatroom(tabId, username, caAddress, coinName) {
                     const newCount = (currentCount || 0) + 1;
                     console.log('New reaction count will be:', newCount);
                     
+                    // Update reaction count
                     return fetch(messageRef, {
                         method: 'PUT',
                         headers: { 'Content-Type': 'application/json' },
@@ -1440,6 +1442,21 @@ function openChatroom(tabId, username, caAddress, coinName) {
                         console.log('PUT response status:', response.status);
                         if (response.ok) {
                             console.log(`Reaction ${reaction} successfully updated to count ${newCount}`);
+                            
+                            // Also update the order if this is a new reaction
+                            if (currentCount === 0 || currentCount === null) {
+                                return fetch(orderRef).then(response => response.json()).then(orderData => {
+                                    const order = orderData || [];
+                                    if (!order.includes(reaction)) {
+                                        order.push(reaction);
+                                        return fetch(orderRef, {
+                                            method: 'PUT',
+                                            headers: { 'Content-Type': 'application/json' },
+                                            body: JSON.stringify(order)
+                                        });
+                                    }
+                                });
+                            }
                         } else {
                             console.error('Failed to update reaction:', response.status, response.statusText);
                         }
@@ -1470,13 +1487,45 @@ function openChatroom(tabId, username, caAddress, coinName) {
                             console.log('Refreshing reactions for message:', messageKey, 'Data:', reactionsData);
                             let reactionsHTML = '';
                             if (reactionsData && typeof reactionsData === 'object' && Object.keys(reactionsData).length > 0) {
-                                // Use the order they appear in the data (order they were added)
+                                                            // Get the order from Firebase
+                            const orderRef = `${firebaseConfig.databaseURL}/chats/${sanitizedCA}/activeMessages/${key}/reactionOrder.json`;
+                            
+                            fetch(orderRef).then(response => response.json()).then(orderData => {
+                                const order = orderData || [];
+                                
+                                // Display reactions in the correct order
+                                order.forEach(emoji => {
+                                    const count = reactionsData[emoji];
+                                    if (count > 0) {
+                                        reactionsHTML += `<div class="persistent-reaction">${emoji} ${count}</div>`;
+                                    }
+                                });
+                                
+                                if (reactionsHTML) {
+                                    const persistentReactions = messageElement.querySelector('.message-persistent-reactions');
+                                    if (persistentReactions) {
+                                        persistentReactions.innerHTML = reactionsHTML;
+                                        console.log('Updated persistent reactions for message:', key, 'HTML:', reactionsHTML);
+                                    }
+                                }
+                            }).catch(error => {
+                                console.error('Error fetching reaction order:', error);
+                                // Fallback to original order if order fetch fails
                                 const sortedReactions = Object.entries(reactionsData)
                                     .filter(([emoji, count]) => count > 0);
                                 
                                 sortedReactions.forEach(([emoji, count]) => {
                                     reactionsHTML += `<div class="persistent-reaction">${emoji} ${count}</div>`;
                                 });
+                                
+                                if (reactionsHTML) {
+                                    const persistentReactions = messageElement.querySelector('.message-persistent-reactions');
+                                    if (persistentReactions) {
+                                        persistentReactions.innerHTML = reactionsHTML;
+                                        console.log('Updated persistent reactions for message:', key, 'HTML:', reactionsHTML);
+                                    }
+                                }
+                            });
                             }
                             
                             if (reactionsHTML) {
