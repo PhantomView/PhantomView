@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "PhantomView",
-  "version": "0.3.0",
+  "version": "0.8.7",
   "description": "Live viewer analytics and chat interface for Solana memecoins",
   "permissions": [
     "activeTab",
@@ -9,6 +9,7 @@
     "tabs",
     "scripting"
   ],
+
   "action": {
     "default_title": "PhantomView - Solana Analytics",
     "default_icon": {
@@ -37,7 +38,7 @@
   },
   "web_accessible_resources": [
     {
-      "resources": ["icons/PhantomViewtransparent.png"],
+      "resources": ["icons/PhantomViewtransparent.png", "firebase-config.js"],
       "matches": ["<all_urls>"]
     }
   ]
