@@ -855,17 +855,22 @@ function openChatroom(tabId, username, caAddress, coinName) {
             }
             .message-reactions {
                 position: absolute !important;
-                bottom: -40px !important;
+                bottom: -50px !important;
                 right: 0 !important;
-                background: rgba(17, 17, 17, 0.95) !important;
-                border: 1px solid rgba(255, 255, 255, 0.2) !important;
-                border-radius: 8px !important;
-                padding: 8px !important;
+                background: rgba(17, 17, 17, 0.98) !important;
+                border: 2px solid rgba(255, 255, 255, 0.3) !important;
+                border-radius: 12px !important;
+                padding: 12px !important;
                 display: flex !important;
-                gap: 8px !important;
+                gap: 12px !important;
                 z-index: 2147483649 !important;
-                backdrop-filter: blur(10px) !important;
-                box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3) !important;
+                backdrop-filter: blur(15px) !important;
+                box-shadow: 0 8px 25px rgba(0, 0, 0, 0.5) !important;
+                animation: fadeIn 0.2s ease-out !important;
+            }
+            @keyframes fadeIn {
+                from { opacity: 0; transform: translateY(10px); }
+                to { opacity: 1; transform: translateY(0); }
             }
             .reaction-button {
                 background: rgba(255, 255, 255, 0.1) !important;
@@ -1227,14 +1232,17 @@ function openChatroom(tabId, username, caAddress, coinName) {
                     '👎': 0
                 };
                 
-                // Add hold event listener
+                // Add hold event listener with better detection
                 messageContent.addEventListener('mousedown', function(e) {
+                    console.log('Mouse down on message - starting hold timer');
                     reactionTimeout = setTimeout(() => {
+                        console.log('Hold timer completed - showing reactions');
                         showReactions(messageElement, reactions);
                     }, 500); // 500ms hold
                 });
                 
                 messageContent.addEventListener('mouseup', function(e) {
+                    console.log('Mouse up on message - clearing hold timer');
                     if (reactionTimeout) {
                         clearTimeout(reactionTimeout);
                         reactionTimeout = null;
@@ -1242,14 +1250,39 @@ function openChatroom(tabId, username, caAddress, coinName) {
                 });
                 
                 messageContent.addEventListener('mouseleave', function(e) {
+                    console.log('Mouse leave on message - clearing hold timer');
                     if (reactionTimeout) {
                         clearTimeout(reactionTimeout);
                         reactionTimeout = null;
                     }
                 });
+                
+                // Add touch events for mobile support
+                messageContent.addEventListener('touchstart', function(e) {
+                    console.log('Touch start on message - starting hold timer');
+                    reactionTimeout = setTimeout(() => {
+                        console.log('Touch hold timer completed - showing reactions');
+                        showReactions(messageElement, reactions);
+                    }, 500);
+                });
+                
+                messageContent.addEventListener('touchend', function(e) {
+                    console.log('Touch end on message - clearing hold timer');
+                    if (reactionTimeout) {
+                        clearTimeout(reactionTimeout);
+                        reactionTimeout = null;
+                    }
+                });
+                
+                // Prevent context menu on long press
+                messageContent.addEventListener('contextmenu', function(e) {
+                    e.preventDefault();
+                });
             }
             
             function showReactions(messageElement, reactions) {
+                console.log('Showing reactions popup for message');
+                
                 // Remove existing reactions
                 const existingReactions = messageElement.querySelector('.message-reactions');
                 if (existingReactions) {
@@ -1293,13 +1326,15 @@ function openChatroom(tabId, username, caAddress, coinName) {
                 
                 // Add reactions to message
                 messageElement.appendChild(reactionsPopup);
+                console.log('Reactions popup added to message');
                 
-                // Auto-hide reactions after 3 seconds
+                // Auto-hide reactions after 5 seconds (increased from 3)
                 setTimeout(() => {
                     if (reactionsPopup.parentNode) {
                         reactionsPopup.remove();
+                        console.log('Reactions popup auto-hidden');
                     }
-                }, 3000);
+                }, 5000);
             }
             
             // Firebase chat functionality
