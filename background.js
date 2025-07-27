@@ -855,9 +855,7 @@ function openChatroom(tabId, username, caAddress, coinName) {
                 position: relative !important;
             }
             .message-reactions {
-                position: absolute !important;
-                top: -60px !important;
-                right: 0 !important;
+                position: fixed !important;
                 background: rgba(17, 17, 17, 0.98) !important;
                 border: 2px solid rgba(255, 255, 255, 0.3) !important;
                 border-radius: 12px !important;
@@ -1341,22 +1339,22 @@ function openChatroom(tabId, username, caAddress, coinName) {
                 const messageRect = messageElement.getBoundingClientRect();
                 const isOwnMessage = messageElement.classList.contains('own');
                 
-                // Adjust position for small messages
+                // Position popup relative to the message
                 if (isOwnMessage) {
                     // For own messages (right-aligned), position popup to the left
-                    reactionsPopup.style.left = 'auto';
-                    reactionsPopup.style.right = '0px';
+                    reactionsPopup.style.left = (messageRect.left - 150) + 'px';
+                    reactionsPopup.style.top = (messageRect.top - 60) + 'px';
                 } else {
                     // For other messages (left-aligned), check if message is small
                     const messageWidth = messageRect.width;
                     if (messageWidth < 200) {
-                        // Small message - position popup much further right to avoid cutoff
-                        reactionsPopup.style.left = 'auto';
-                        reactionsPopup.style.right = '-80px';
+                        // Small message - position popup further right
+                        reactionsPopup.style.left = (messageRect.right + 10) + 'px';
+                        reactionsPopup.style.top = (messageRect.top - 60) + 'px';
                     } else {
                         // Normal message - standard position
-                        reactionsPopup.style.left = 'auto';
-                        reactionsPopup.style.right = '0px';
+                        reactionsPopup.style.left = (messageRect.right - 120) + 'px';
+                        reactionsPopup.style.top = (messageRect.top - 60) + 'px';
                     }
                 }
                 
