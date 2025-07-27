@@ -819,12 +819,13 @@ function openChatroom(tabId, username, caAddress, coinName) {
                 align-items: center !important;
             }
             .chatroom-messages {
-                flex: 1 !important;
                 overflow-y: auto !important;
+                flex: 1 1 0 !important;
                 padding: 16px !important;
                 display: flex !important;
                 flex-direction: column !important;
-                gap: 8px !important;
+                gap: 12px !important;
+                cursor: default !important;
             }
             .message {
                 background: rgba(255, 255, 255, 0.1) !important;
@@ -889,13 +890,14 @@ function openChatroom(tabId, username, caAddress, coinName) {
             }
             .chatroom-input {
                 background: rgba(255, 255, 255, 0.1) !important;
-                border: 1px solid rgba(255, 255, 255, 0.2) !important;
+                border: none !important;
                 border-radius: 8px !important;
                 padding: 12px 16px !important;
                 color: white !important;
-                font-size: 14px !important;
+                font-size: 15px !important;
                 width: 100% !important;
-                margin: 0 !important;
+                outline: none !important;
+                cursor: text !important;
             }
             .chatroom-input::placeholder {
                 color: rgba(255, 255, 255, 0.6) !important;
@@ -1354,7 +1356,7 @@ function openChatroom(tabId, username, caAddress, coinName) {
                 const sanitizedCA = caAddress.replace(/[^A-Za-z0-9]/g, '');
                 const presenceRef = `${firebaseConfig.databaseURL}/chats/${sanitizedCA}/activeMessages.json`;
                 
-                // Poll for new messages every 500ms
+                // Poll for new messages every 100ms (faster updates)
                 const messageInterval = setInterval(() => {
                     fetch(presenceRef).then(response => response.json()).then(data => {
                         if (data) {
@@ -1374,7 +1376,7 @@ function openChatroom(tabId, username, caAddress, coinName) {
                     }).catch(error => {
                         console.error('Error fetching active messages:', error);
                     });
-                }, 500);
+                }, 100);
                 
                 // Cleanup old messages every 30 seconds
                 const cleanupInterval = setInterval(() => {
