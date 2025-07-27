@@ -886,10 +886,10 @@ function openChatroom(tabId, username, caAddress, coinName) {
                 z-index: 2147483648 !important;
             }
             .message.own .message-persistent-reactions {
-                left: -5px !important;
+                left: -15px !important;
             }
             .message.other .message-persistent-reactions {
-                right: -5px !important;
+                right: -15px !important;
             }
             .persistent-reaction {
                 background: rgba(255, 255, 255, 0.1) !important;
