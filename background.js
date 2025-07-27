@@ -888,9 +888,11 @@ function openChatroom(tabId, username, caAddress, coinName) {
             }
             .message.own .message-persistent-reactions {
                 left: -15px !important;
+                justify-content: flex-start !important;
             }
             .message.other .message-persistent-reactions {
                 right: -25px !important;
+                justify-content: flex-end !important;
             }
             .persistent-reaction {
                 background: rgba(255, 255, 255, 0.1) !important;
