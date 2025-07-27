@@ -1543,17 +1543,39 @@ function openChatroom(tabId, username, caAddress, coinName) {
                         // Set message key for reaction tracking
                         messageElement.dataset.messageKey = key;
                         
-                        messageElement.innerHTML = `
-                            <div class="message-header">${messageData.username}</div>
-                            <div class="message-content">${messageData.message}</div>
-                            <div class="message-persistent-reactions">
-                                ${messageData.reactions ? Object.entries(messageData.reactions).map(([emoji, count]) => 
-                                    count > 0 ? `<div class="persistent-reaction">${emoji} ${count}</div>` : ''
-                                ).join('') : ''}
-                            </div>
-                        `;
-                        addReactionFunctionality(messageElement);
-                        chatMessages.appendChild(messageElement);
+                        // Fetch reactions for this message
+                        const sanitizedCA = caAddress.replace(/[^A-Za-z0-9]/g, '');
+                        const reactionsRef = `${firebaseConfig.databaseURL}/chats/${sanitizedCA}/activeMessages/${key}/reactions.json`;
+                        
+                        fetch(reactionsRef).then(response => response.json()).then(reactionsData => {
+                            let reactionsHTML = '';
+                            if (reactionsData) {
+                                Object.entries(reactionsData).forEach(([emoji, count]) => {
+                                    if (count > 0) {
+                                        reactionsHTML += `<div class="persistent-reaction">${emoji} ${count}</div>`;
+                                    }
+                                });
+                            }
+                            
+                            messageElement.innerHTML = `
+                                <div class="message-header">${messageData.username}</div>
+                                <div class="message-content">${messageData.message}</div>
+                                <div class="message-persistent-reactions">
+                                    ${reactionsHTML}
+                                </div>
+                            `;
+                            addReactionFunctionality(messageElement);
+                            chatMessages.appendChild(messageElement);
+                        }).catch(error => {
+                            console.error('Error fetching reactions for message:', error);
+                            messageElement.innerHTML = `
+                                <div class="message-header">${messageData.username}</div>
+                                <div class="message-content">${messageData.message}</div>
+                                <div class="message-persistent-reactions"></div>
+                            `;
+                            addReactionFunctionality(messageElement);
+                            chatMessages.appendChild(messageElement);
+                        });
                     }
                 });
 
