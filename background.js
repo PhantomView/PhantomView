@@ -1058,7 +1058,7 @@ function openChatroom(tabId, username, caAddress, coinName) {
                     <div class="chatroom-messages" id="chat-messages">
                         <div class="message other system">
                             <div class="message-header">System</div>
-                            <div class="message-content">Welcome to the chat! You can now discuss this memecoin with other viewers.</div>
+                            <div class="message-content">Welcome to the chat! Messages are temporary and will disappear after 5 minutes.</div>
                         </div>
                     </div>
                     
@@ -1075,6 +1075,17 @@ function openChatroom(tabId, username, caAddress, coinName) {
             if (closeButton) {
                 closeButton.addEventListener('click', function() {
                     console.log('Close button clicked - removing overlay');
+                    
+                    // Cleanup intervals when chatroom closes
+                    if (window.messageInterval) {
+                        clearInterval(window.messageInterval);
+                        window.messageInterval = null;
+                    }
+                    if (window.cleanupInterval) {
+                        clearInterval(window.cleanupInterval);
+                        window.cleanupInterval = null;
+                    }
+                    
                     overlay.remove();
                 });
             }
@@ -1315,7 +1326,7 @@ function openChatroom(tabId, username, caAddress, coinName) {
             
             function sendMessageToFirebase(message, username, caAddress) {
                 const sanitizedCA = caAddress.replace(/[^A-Za-z0-9]/g, '');
-                const chatRef = `${firebaseConfig.databaseURL}/chats/${sanitizedCA}/messages.json`;
+                const presenceRef = `${firebaseConfig.databaseURL}/chats/${sanitizedCA}/activeMessages.json`;
                 
                 const messageData = {
                     username: username,
@@ -1328,17 +1339,20 @@ function openChatroom(tabId, username, caAddress, coinName) {
                     }
                 };
                 
-                fetch(chatRef, {
-                    method: 'POST',
+                // Store message temporarily for active users only
+                fetch(presenceRef, {
+                    method: 'PATCH',
                     headers: {
                         'Content-Type': 'application/json',
                     },
-                    body: JSON.stringify(messageData)
+                    body: JSON.stringify({
+                        [Date.now()]: messageData
+                    })
                 }).then(response => {
                     if (response.ok) {
-                        console.log('Message sent to Firebase');
+                        console.log('Message broadcast to active users');
                     } else {
-                        console.error('Failed to send message to Firebase:', response.status);
+                        console.error('Failed to broadcast message:', response.status);
                         // Show local message even if Firebase fails
                         const messageElement = document.createElement('div');
                         messageElement.className = 'message own';
@@ -1351,7 +1365,7 @@ function openChatroom(tabId, username, caAddress, coinName) {
                         chatMessages.scrollTop = chatMessages.scrollHeight;
                     }
                 }).catch(error => {
-                    console.error('Error sending message:', error);
+                    console.error('Error broadcasting message:', error);
                     // Show local message even if Firebase fails
                     const messageElement = document.createElement('div');
                     messageElement.className = 'message own';
@@ -1367,18 +1381,61 @@ function openChatroom(tabId, username, caAddress, coinName) {
             
             function listenForMessages(caAddress) {
                 const sanitizedCA = caAddress.replace(/[^A-Za-z0-9]/g, '');
-                const chatRef = `${firebaseConfig.databaseURL}/chats/${sanitizedCA}/messages.json`;
+                const presenceRef = `${firebaseConfig.databaseURL}/chats/${sanitizedCA}/activeMessages.json`;
                 
-                // Poll for new messages every 2 seconds
-                setInterval(() => {
-                    fetch(chatRef).then(response => response.json()).then(data => {
+                // Poll for new messages every 500ms
+                const messageInterval = setInterval(() => {
+                    fetch(presenceRef).then(response => response.json()).then(data => {
                         if (data) {
-                            updateChatMessages(data, username);
+                            // Filter out old messages (older than 5 minutes)
+                            const now = Date.now();
+                            const fiveMinutesAgo = now - (5 * 60 * 1000);
+                            const activeMessages = {};
+                            
+                            Object.entries(data).forEach(([key, messageData]) => {
+                                if (messageData.timestamp > fiveMinutesAgo) {
+                                    activeMessages[key] = messageData;
+                                }
+                            });
+                            
+                            updateChatMessages(activeMessages, username);
                         }
                     }).catch(error => {
-                        console.error('Error fetching messages:', error);
+                        console.error('Error fetching active messages:', error);
                     });
                 }, 500);
+                
+                // Cleanup old messages every 30 seconds
+                const cleanupInterval = setInterval(() => {
+                    fetch(presenceRef).then(response => response.json()).then(data => {
+                        if (data) {
+                            const now = Date.now();
+                            const fiveMinutesAgo = now - (5 * 60 * 1000);
+                            const activeMessages = {};
+                            
+                            Object.entries(data).forEach(([key, messageData]) => {
+                                if (messageData.timestamp > fiveMinutesAgo) {
+                                    activeMessages[key] = messageData;
+                                }
+                            });
+                            
+                            // Update with only active messages (removes old ones)
+                            fetch(presenceRef, {
+                                method: 'PUT',
+                                headers: {
+                                    'Content-Type': 'application/json',
+                                },
+                                body: JSON.stringify(activeMessages)
+                            });
+                        }
+                    }).catch(error => {
+                        console.error('Error cleaning up old messages:', error);
+                    });
+                }, 30000);
+                
+                // Store intervals for cleanup when chatroom closes
+                window.messageInterval = messageInterval;
+                window.cleanupInterval = cleanupInterval;
             }
             
             // Store last message keys to avoid re-rendering all messages
