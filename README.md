@@ -51,11 +51,18 @@ A Google Chrome extension that provides live viewer analytics and chat interface
 - **Tensor**: `https://tensor.trade/token/[CA]`
 
 ### **General Trading Sites:**
-- Solscan.io
-- Solana.com
-- Raydium.io
-- DexScreener.com
-- And more...
+- axiom.trade
+- neo.bullx.io
+- raydium.io
+- dexscreener.com
+- letsbonk.fun
+- birdeye.so
+- solscan.io
+- solana.fm
+- jup.ag
+- pump.fun
+- bonkbot.com
+- tensor.trade
 
 ## 🛠️ Installation
 
