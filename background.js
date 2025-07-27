@@ -876,7 +876,7 @@ function openChatroom(tabId, username, caAddress, coinName) {
             }
             .message.other .message-reactions {
                 top: -50px !important;
-                right: 0 !important;
+                right: -20px !important;
             }
             .message-persistent-reactions {
                 position: absolute !important;
