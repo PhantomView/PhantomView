@@ -1207,20 +1207,7 @@ function openChatroom(tabId, username, caAddress, coinName) {
                 }
                 
                 // All checks passed - send message
-                const messageElement = document.createElement('div');
-                messageElement.className = 'message own';
-                messageElement.innerHTML = `
-                    <div class="message-header">${username}</div>
-                    <div class="message-content">${message}</div>
-                `;
-                
-                // Add reaction functionality to the message
-                addReactionFunctionality(messageElement);
-                
-                chatMessages.appendChild(messageElement);
-                chatMessages.scrollTop = chatMessages.scrollHeight;
-                
-                // Clear input
+                // Clear input first
                 chatInput.value = '';
                 
                 // Send message to Firebase for real-time chat
@@ -1353,29 +1340,13 @@ function openChatroom(tabId, username, caAddress, coinName) {
                         console.log('Message broadcast to active users');
                     } else {
                         console.error('Failed to broadcast message:', response.status);
-                        // Show local message even if Firebase fails
-                        const messageElement = document.createElement('div');
-                        messageElement.className = 'message own';
-                        messageElement.innerHTML = `
-                            <div class="message-header">${username}</div>
-                            <div class="message-content">${message}</div>
-                        `;
-                        addReactionFunctionality(messageElement);
-                        chatMessages.appendChild(messageElement);
-                        chatMessages.scrollTop = chatMessages.scrollHeight;
+                        // Show warning if Firebase fails
+                        showWarning('Failed to send message - please try again');
                     }
                 }).catch(error => {
                     console.error('Error broadcasting message:', error);
-                    // Show local message even if Firebase fails
-                    const messageElement = document.createElement('div');
-                    messageElement.className = 'message own';
-                    messageElement.innerHTML = `
-                        <div class="message-header">${username}</div>
-                        <div class="message-content">${message}</div>
-                    `;
-                    addReactionFunctionality(messageElement);
-                    chatMessages.appendChild(messageElement);
-                    chatMessages.scrollTop = chatMessages.scrollHeight;
+                    // Show warning if Firebase fails
+                    showWarning('Failed to send message - please try again');
                 });
             }
             
