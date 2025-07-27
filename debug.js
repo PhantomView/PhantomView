@@ -31,4 +31,4 @@ function testWindowCreation() {
 }
 
 // Export for testing
-window.testWindowCreation = testWindowCreation; 
+window.testWindowCreation = testWindowCreation;
