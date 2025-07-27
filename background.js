@@ -1390,20 +1390,33 @@ function openChatroom(tabId, username, caAddress, coinName) {
                 const sanitizedCA = caAddress.replace(/[^A-Za-z0-9]/g, '');
                 const messageRef = `${firebaseConfig.databaseURL}/chats/${sanitizedCA}/activeMessages/${messageKey}/reactions/${reaction}.json`;
                 
+                console.log('Updating reaction:', reaction, 'for message:', messageKey, 'at URL:', messageRef);
+                
                 // Get current reaction count and increment
-                fetch(messageRef).then(response => response.json()).then(currentCount => {
+                fetch(messageRef).then(response => {
+                    console.log('Fetch response status:', response.status);
+                    if (!response.ok) {
+                        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                    }
+                    return response.json();
+                }).then(currentCount => {
+                    console.log('Current reaction count:', currentCount);
                     const newCount = (currentCount || 0) + 1;
+                    console.log('New reaction count will be:', newCount);
+                    
                     return fetch(messageRef, {
                         method: 'PUT',
                         headers: { 'Content-Type': 'application/json' },
                         body: JSON.stringify(newCount)
+                    }).then(response => {
+                        console.log('PUT response status:', response.status);
+                        if (response.ok) {
+                            console.log(`Reaction ${reaction} successfully updated to count ${newCount}`);
+                        } else {
+                            console.error('Failed to update reaction:', response.status, response.statusText);
+                        }
+                        return response;
                     });
-                }).then(response => {
-                    if (response.ok) {
-                        console.log(`Reaction ${reaction} updated to count ${newCount}`);
-                    } else {
-                        console.error('Failed to update reaction:', response.status);
-                    }
                 }).catch(error => {
                     console.error('Error updating reaction:', error);
                 });
