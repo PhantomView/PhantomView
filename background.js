@@ -1348,20 +1348,25 @@ function openChatroom(tabId, username, caAddress, coinName) {
                         // Get the message key from the message element
                         const messageKey = messageElement.dataset.messageKey;
                         if (messageKey) {
-                            // Update reaction in Firebase
-                            updateMessageReaction(messageKey, reaction, caAddress);
-                        }
+                                                    // Update reaction in Firebase
+                        updateMessageReaction(messageKey, reaction, caAddress);
                         
-                        // Add visual feedback
-                        e.target.style.background = 'rgba(59, 130, 246, 0.3)';
+                        // Refresh all message reactions after a short delay
                         setTimeout(() => {
-                            e.target.style.background = '';
-                        }, 200);
-                        
-                        console.log(`Reaction added: ${reaction} to message`);
-                        
-                        // Hide reactions after clicking a reaction
-                        setTimeout(hideReactions, 300);
+                            refreshAllMessageReactions();
+                        }, 1000);
+                    }
+                    
+                    // Add visual feedback
+                    e.target.style.background = 'rgba(59, 130, 246, 0.3)';
+                    setTimeout(() => {
+                        e.target.style.background = '';
+                    }, 200);
+                    
+                    console.log(`Reaction added: ${reaction} to message`);
+                    
+                    // Hide reactions after clicking a reaction
+                    setTimeout(hideReactions, 300);
                     }
                 });
                 
@@ -1401,6 +1406,47 @@ function openChatroom(tabId, username, caAddress, coinName) {
                     }
                 }).catch(error => {
                     console.error('Error updating reaction:', error);
+                });
+            }
+            
+            // Function to refresh all message reactions
+            function refreshAllMessageReactions() {
+                console.log('Refreshing all message reactions...');
+                const messages = document.querySelectorAll('.message');
+                const sanitizedCA = caAddress.replace(/[^A-Za-z0-9]/g, '');
+                
+                messages.forEach(messageElement => {
+                    const messageKey = messageElement.dataset.messageKey;
+                    if (messageKey) {
+                        const reactionsRef = `${firebaseConfig.databaseURL}/chats/${sanitizedCA}/activeMessages/${messageKey}/reactions.json`;
+                        
+                        fetch(reactionsRef).then(response => {
+                            if (!response.ok) {
+                                throw new Error(`HTTP ${response.status}`);
+                            }
+                            return response.json();
+                        }).then(reactionsData => {
+                            console.log('Refreshing reactions for message:', messageKey, 'Data:', reactionsData);
+                            let reactionsHTML = '';
+                            if (reactionsData && typeof reactionsData === 'object' && Object.keys(reactionsData).length > 0) {
+                                Object.entries(reactionsData).forEach(([emoji, count]) => {
+                                    if (count > 0) {
+                                        reactionsHTML += `<div class="persistent-reaction">${emoji} ${count}</div>`;
+                                    }
+                                });
+                            }
+                            
+                            if (reactionsHTML) {
+                                const persistentReactions = messageElement.querySelector('.message-persistent-reactions');
+                                if (persistentReactions) {
+                                    persistentReactions.innerHTML = reactionsHTML;
+                                    console.log('Refreshed reactions for message:', messageKey, 'HTML:', reactionsHTML);
+                                }
+                            }
+                        }).catch(error => {
+                            console.error('Error refreshing reactions for message:', messageKey, error);
+                        });
+                    }
                 });
             }
             
@@ -1561,11 +1607,14 @@ function openChatroom(tabId, username, caAddress, coinName) {
                         
                         fetch(reactionsRef).then(response => {
                             console.log('Reactions response status:', response.status);
+                            if (!response.ok) {
+                                throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                            }
                             return response.json();
                         }).then(reactionsData => {
                             console.log('Reactions data received:', reactionsData);
                             let reactionsHTML = '';
-                            if (reactionsData && typeof reactionsData === 'object') {
+                            if (reactionsData && typeof reactionsData === 'object' && Object.keys(reactionsData).length > 0) {
                                 Object.entries(reactionsData).forEach(([emoji, count]) => {
                                     if (count > 0) {
                                         reactionsHTML += `<div class="persistent-reaction">${emoji} ${count}</div>`;
@@ -1576,8 +1625,14 @@ function openChatroom(tabId, username, caAddress, coinName) {
                             
                             if (reactionsHTML) {
                                 const persistentReactions = messageElement.querySelector('.message-persistent-reactions');
-                                persistentReactions.innerHTML = reactionsHTML;
-                                console.log('Updated persistent reactions for message:', key);
+                                if (persistentReactions) {
+                                    persistentReactions.innerHTML = reactionsHTML;
+                                    console.log('Updated persistent reactions for message:', key, 'HTML:', reactionsHTML);
+                                } else {
+                                    console.error('Persistent reactions container not found for message:', key);
+                                }
+                            } else {
+                                console.log('No reactions to display for message:', key);
                             }
                         }).catch(error => {
                             console.error('Error fetching reactions for message:', key, error);
