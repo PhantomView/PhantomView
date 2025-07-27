@@ -880,10 +880,10 @@ function openChatroom(tabId, username, caAddress, coinName) {
                 z-index: 2147483648 !important;
             }
             .message.own .message-persistent-reactions {
-                left: 8px !important;
+                left: 2px !important;
             }
             .message.other .message-persistent-reactions {
-                right: 8px !important;
+                right: 2px !important;
             }
             .persistent-reaction {
                 background: rgba(255, 255, 255, 0.1) !important;
@@ -1350,9 +1350,9 @@ function openChatroom(tabId, username, caAddress, coinName) {
                     // For other messages (left-aligned), check if message is small
                     const messageWidth = messageRect.width;
                     if (messageWidth < 150) {
-                        // Small message - position popup further right
+                        // Small message - position popup much further right to avoid cutoff
                         reactionsPopup.style.left = 'auto';
-                        reactionsPopup.style.right = '-30px';
+                        reactionsPopup.style.right = '-50px';
                     } else {
                         // Normal message - standard position
                         reactionsPopup.style.left = 'auto';
