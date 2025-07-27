@@ -9,7 +9,7 @@ body {
     background: #1a1a2e;
     color: #ffffff;
     width: 450px;
-    height: 600px;
+    height: 200px;
     overflow: hidden;
 }
 
@@ -20,7 +20,7 @@ body {
     background: linear-gradient(135deg, #16213e 0%, #0f3460 50%, #533483 100%);
     display: flex;
     flex-direction: column;
-    padding: 24px;
+    padding: 16px;
 }
 
 /* Header Section */
@@ -30,8 +30,8 @@ body {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    margin-bottom: 40px;
-    padding-bottom: 20px;
+    margin-bottom: 10px;
+    padding-bottom: 5px;
 }
 
 .logo-section {
@@ -99,9 +99,10 @@ body {
     flex: 1;
     display: flex;
     flex-direction: column;
-    justify-content: center;
+    justify-content: flex-start;
     align-items: center;
-    gap: 24px;
+    gap: 12px;
+    padding-top: 10px;
 }
 
 .error-icon {
