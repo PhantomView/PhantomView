@@ -869,6 +869,32 @@ function openChatroom(tabId, username, caAddress, coinName) {
                 box-shadow: 0 8px 25px rgba(0, 0, 0, 0.5) !important;
                 animation: fadeIn 0.2s ease-out !important;
                 min-width: 120px !important;
+                max-width: 200px !important;
+            }
+            .message-persistent-reactions {
+                position: absolute !important;
+                top: 8px !important;
+                right: 8px !important;
+                display: flex !important;
+                gap: 4px !important;
+                z-index: 2147483648 !important;
+            }
+            .persistent-reaction {
+                background: rgba(255, 255, 255, 0.1) !important;
+                border: 1px solid rgba(255, 255, 255, 0.2) !important;
+                border-radius: 12px !important;
+                padding: 2px 6px !important;
+                font-size: 10px !important;
+                color: white !important;
+                display: flex !important;
+                align-items: center !important;
+                gap: 2px !important;
+                cursor: pointer !important;
+                transition: all 0.2s !important;
+            }
+            .persistent-reaction:hover {
+                background: rgba(255, 255, 255, 0.2) !important;
+                transform: scale(1.1) !important;
             }
             @keyframes fadeIn {
                 from { opacity: 0; transform: translateY(10px); }
@@ -1318,11 +1344,13 @@ function openChatroom(tabId, username, caAddress, coinName) {
                 reactionsPopup.addEventListener('click', function(e) {
                     if (e.target.classList.contains('reaction-button')) {
                         const reaction = e.target.dataset.reaction;
-                        reactions[reaction]++;
                         
-                        // Update the reaction count
-                        const countSpan = e.target.querySelector('.reaction-count');
-                        countSpan.textContent = reactions[reaction];
+                        // Get the message key from the message element
+                        const messageKey = messageElement.dataset.messageKey;
+                        if (messageKey) {
+                            // Update reaction in Firebase
+                            updateMessageReaction(messageKey, reaction, caAddress);
+                        }
                         
                         // Add visual feedback
                         e.target.style.background = 'rgba(59, 130, 246, 0.3)';
@@ -1350,6 +1378,30 @@ function openChatroom(tabId, username, caAddress, coinName) {
                         }
                     });
                 }, 100);
+            }
+            
+            // Function to update message reactions in Firebase
+            function updateMessageReaction(messageKey, reaction, caAddress) {
+                const sanitizedCA = caAddress.replace(/[^A-Za-z0-9]/g, '');
+                const messageRef = `${firebaseConfig.databaseURL}/chats/${sanitizedCA}/activeMessages/${messageKey}/reactions/${reaction}.json`;
+                
+                // Get current reaction count and increment
+                fetch(messageRef).then(response => response.json()).then(currentCount => {
+                    const newCount = (currentCount || 0) + 1;
+                    return fetch(messageRef, {
+                        method: 'PUT',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(newCount)
+                    });
+                }).then(response => {
+                    if (response.ok) {
+                        console.log(`Reaction ${reaction} updated to count ${newCount}`);
+                    } else {
+                        console.error('Failed to update reaction:', response.status);
+                    }
+                }).catch(error => {
+                    console.error('Error updating reaction:', error);
+                });
             }
             
             // Firebase chat functionality
@@ -1489,9 +1541,17 @@ function openChatroom(tabId, username, caAddress, coinName) {
                         const messageElement = document.createElement('div');
                         const isOwnMessage = messageData.username === currentUsername;
                         messageElement.className = `message ${isOwnMessage ? 'own' : 'other'}`;
+                        // Set message key for reaction tracking
+                        messageElement.dataset.messageKey = key;
+                        
                         messageElement.innerHTML = `
                             <div class="message-header">${messageData.username}</div>
                             <div class="message-content">${messageData.message}</div>
+                            <div class="message-persistent-reactions">
+                                ${messageData.reactions ? Object.entries(messageData.reactions).map(([emoji, count]) => 
+                                    count > 0 ? `<div class="persistent-reaction">${emoji} ${count}</div>` : ''
+                                ).join('') : ''}
+                            </div>
                         `;
                         addReactionFunctionality(messageElement);
                         chatMessages.appendChild(messageElement);
