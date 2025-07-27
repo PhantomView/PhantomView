@@ -1477,20 +1477,22 @@ function openChatroom(tabId, username, caAddress, coinName) {
                     const messageKey = messageElement.dataset.messageKey;
                     if (messageKey) {
                         const reactionsRef = `${firebaseConfig.databaseURL}/chats/${sanitizedCA}/activeMessages/${messageKey}/reactions.json`;
+                        const orderRef = `${firebaseConfig.databaseURL}/chats/${sanitizedCA}/activeMessages/${messageKey}/reactionOrder.json`;
                         
-                        fetch(reactionsRef).then(response => {
-                            if (!response.ok) {
-                                throw new Error(`HTTP ${response.status}`);
-                            }
-                            return response.json();
-                        }).then(reactionsData => {
-                            console.log('Refreshing reactions for message:', messageKey, 'Data:', reactionsData);
-                            let reactionsHTML = '';
-                            if (reactionsData && typeof reactionsData === 'object' && Object.keys(reactionsData).length > 0) {
-                                                            // Get the order from Firebase
-                            const orderRef = `${firebaseConfig.databaseURL}/chats/${sanitizedCA}/activeMessages/${key}/reactionOrder.json`;
+                        // Fetch both reactions and order data in parallel
+                        Promise.all([
+                            fetch(reactionsRef).then(response => {
+                                if (!response.ok) {
+                                    throw new Error(`HTTP ${response.status}`);
+                                }
+                                return response.json();
+                            }),
+                            fetch(orderRef).then(response => response.json()).catch(() => [])
+                        ]).then(([reactionsData, orderData]) => {
+                            console.log('Refreshing reactions for message:', messageKey, 'Data:', reactionsData, 'Order:', orderData);
                             
-                            fetch(orderRef).then(response => response.json()).then(orderData => {
+                            if (reactionsData && typeof reactionsData === 'object' && Object.keys(reactionsData).length > 0) {
+                                let reactionsHTML = '';
                                 const order = orderData || [];
                                 
                                 // Display reactions in the correct order
@@ -1501,38 +1503,22 @@ function openChatroom(tabId, username, caAddress, coinName) {
                                     }
                                 });
                                 
-                                if (reactionsHTML) {
-                                    const persistentReactions = messageElement.querySelector('.message-persistent-reactions');
-                                    if (persistentReactions) {
-                                        persistentReactions.innerHTML = reactionsHTML;
-                                        console.log('Updated persistent reactions for message:', key, 'HTML:', reactionsHTML);
-                                    }
+                                // If no order data or empty order, fallback to original order
+                                if (reactionsHTML === '' && order.length === 0) {
+                                    const sortedReactions = Object.entries(reactionsData)
+                                        .filter(([emoji, count]) => count > 0);
+                                    
+                                    sortedReactions.forEach(([emoji, count]) => {
+                                        reactionsHTML += `<div class="persistent-reaction">${emoji} ${count}</div>`;
+                                    });
                                 }
-                            }).catch(error => {
-                                console.error('Error fetching reaction order:', error);
-                                // Fallback to original order if order fetch fails
-                                const sortedReactions = Object.entries(reactionsData)
-                                    .filter(([emoji, count]) => count > 0);
-                                
-                                sortedReactions.forEach(([emoji, count]) => {
-                                    reactionsHTML += `<div class="persistent-reaction">${emoji} ${count}</div>`;
-                                });
                                 
                                 if (reactionsHTML) {
                                     const persistentReactions = messageElement.querySelector('.message-persistent-reactions');
                                     if (persistentReactions) {
                                         persistentReactions.innerHTML = reactionsHTML;
-                                        console.log('Updated persistent reactions for message:', key, 'HTML:', reactionsHTML);
+                                        console.log('Updated persistent reactions for message:', messageKey, 'HTML:', reactionsHTML);
                                     }
-                                }
-                            });
-                            }
-                            
-                            if (reactionsHTML) {
-                                const persistentReactions = messageElement.querySelector('.message-persistent-reactions');
-                                if (persistentReactions) {
-                                    persistentReactions.innerHTML = reactionsHTML;
-                                    console.log('Refreshed reactions for message:', messageKey, 'HTML:', reactionsHTML);
                                 }
                             }
                         }).catch(error => {
@@ -1646,10 +1632,10 @@ function openChatroom(tabId, username, caAddress, coinName) {
                     });
                 }, 30000);
                 
-                // Also poll for reaction updates every 200ms
+                // Also poll for reaction updates every 1000ms (1 second) - less frequent for better performance
                 const reactionInterval = setInterval(() => {
                     refreshAllMessageReactions();
-                }, 200);
+                }, 1000);
                 
                 // Store intervals for cleanup when chatroom closes
                 window.messageInterval = messageInterval;
@@ -1700,25 +1686,44 @@ function openChatroom(tabId, username, caAddress, coinName) {
                         // Fetch reactions for this message
                         const sanitizedCA = caAddress.replace(/[^A-Za-z0-9]/g, '');
                         const reactionsRef = `${firebaseConfig.databaseURL}/chats/${sanitizedCA}/activeMessages/${key}/reactions.json`;
+                        const orderRef = `${firebaseConfig.databaseURL}/chats/${sanitizedCA}/activeMessages/${key}/reactionOrder.json`;
                         
                         console.log('Fetching reactions for message:', key, 'from:', reactionsRef);
                         
-                        fetch(reactionsRef).then(response => {
-                            console.log('Reactions response status:', response.status);
-                            if (!response.ok) {
-                                throw new Error(`HTTP ${response.status}: ${response.statusText}`);
-                            }
-                            return response.json();
-                        }).then(reactionsData => {
-                            console.log('Reactions data received:', reactionsData);
+                        // Fetch both reactions and order data in parallel
+                        Promise.all([
+                            fetch(reactionsRef).then(response => {
+                                console.log('Reactions response status:', response.status);
+                                if (!response.ok) {
+                                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                                }
+                                return response.json();
+                            }),
+                            fetch(orderRef).then(response => response.json()).catch(() => [])
+                        ]).then(([reactionsData, orderData]) => {
+                            console.log('Reactions data received:', reactionsData, 'Order:', orderData);
                             let reactionsHTML = '';
                             if (reactionsData && typeof reactionsData === 'object' && Object.keys(reactionsData).length > 0) {
-                                Object.entries(reactionsData).forEach(([emoji, count]) => {
+                                const order = orderData || [];
+                                
+                                // Display reactions in the correct order
+                                order.forEach(emoji => {
+                                    const count = reactionsData[emoji];
                                     if (count > 0) {
                                         reactionsHTML += `<div class="persistent-reaction">${emoji} ${count}</div>`;
                                         console.log('Adding reaction display:', emoji, count);
                                     }
                                 });
+                                
+                                // If no order data or empty order, fallback to original order
+                                if (reactionsHTML === '' && order.length === 0) {
+                                    Object.entries(reactionsData).forEach(([emoji, count]) => {
+                                        if (count > 0) {
+                                            reactionsHTML += `<div class="persistent-reaction">${emoji} ${count}</div>`;
+                                            console.log('Adding reaction display (fallback):', emoji, count);
+                                        }
+                                    });
+                                }
                             }
                             
                             if (reactionsHTML) {
