@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PhantomView - Test Preview</title>
+    <link rel="stylesheet" href="popup.css">
+    <style>
+        body {
+            width: 100vw;
+            height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            background: #000000;
+        }
+        .test-container {
+            border: 2px solid #333;
+            border-radius: 16px;
+            overflow: hidden;
+        }
+    </style>
+</head>
+<body>
+    <div class="test-container">
+        <div class="container">
+            <!-- Header Section -->
+            <div class="header">
+                <div class="logo-section">
+                    <div class="logo">
+                        <div class="folder-icon">
+                            <div class="folder-body"></div>
+                            <div class="folder-tab"></div>
+                        </div>
+                    </div>
+                    <h1 class="title">PhantomView</h1>
+                </div>
+                
+                <!-- Background Analytics (Faded) -->
+                <div class="background-stats">
+                    <div class="stat-item">
+                        <span class="stat-value">9.72%</span>
+                        <span class="stat-label">Insiders</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-value">99.99%</span>
+                        <span class="stat-label">Bundlers</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-value">LP Burned</span>
+                    </div>
+                </div>
+                
+                <button class="close-btn" id="closeBtn">×</button>
+            </div>
+
+            <!-- Input Section -->
+            <div class="input-section">
+                <input type="text" id="usernameInput" placeholder="Enter username" class="username-input">
+                <button id="joinBtn" class="join-btn">Join</button>
+            </div>
+
+            <!-- Additional Background Stats -->
+            <div class="background-stats-2">
+                <div class="stat-item">
+                    <span class="stat-value">2250</span>
+                    <span class="stat-label">Holders</span>
+                </div>
+                <div class="stat-item">
+                    <span class="stat-value">67</span>
+                    <span class="stat-label">Pro Traders</span>
+                </div>
+                <div class="stat-item">
+                    <span class="stat-label">Paid</span>
+                </div>
+                <div class="stat-item">
+                    <span class="stat-label">Dex Paid</span>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <script src="popup.js"></script>
+</body>
+</html> 

@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PhantomView Extension Test</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            padding: 20px;
+            background: #1a1a2e;
+            color: white;
+        }
+        .test-section {
+            margin: 20px 0;
+            padding: 15px;
+            border: 1px solid #533483;
+            border-radius: 8px;
+        }
+        .success { color: #10b981; }
+        .error { color: #ef4444; }
+        .info { color: #3b82f6; }
+    </style>
+</head>
+<body>
+    <h1>PhantomView Extension Test</h1>
+    
+    <div class="test-section">
+        <h3>Extension Status</h3>
+        <div id="status">Checking...</div>
+    </div>
+    
+    <div class="test-section">
+        <h3>Instructions</h3>
+        <ol>
+            <li>Go to <code>chrome://extensions/</code></li>
+            <li>Enable "Developer mode" (top-right toggle)</li>
+            <li>Click "Load unpacked"</li>
+            <li>Select the phantomview folder</li>
+            <li>Click the PhantomView icon in your toolbar</li>
+        </ol>
+    </div>
+
+    <script>
+        function checkExtension() {
+            const statusDiv = document.getElementById('status');
+            
+            if (typeof chrome !== 'undefined' && chrome.runtime) {
+                statusDiv.innerHTML = `
+                    <div class="success">✅ Extension API Available</div>
+                    <div class="info">Extension ID: ${chrome.runtime.id}</div>
+                    <div class="info">Manifest Version: ${chrome.runtime.getManifest().manifest_version}</div>
+                    <div class="success">🎉 Extension is working!</div>
+                `;
+            } else {
+                statusDiv.innerHTML = `
+                    <div class="error">❌ Extension API Not Available</div>
+                    <div class="info">Make sure the extension is loaded in Chrome</div>
+                `;
+            }
+        }
+        
+        // Check on page load
+        window.addEventListener('load', checkExtension);
+        
+        // Check every 2 seconds
+        setInterval(checkExtension, 2000);
+    </script>
+</body>
+</html> 

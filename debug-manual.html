@@ -1,0 +1,196 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PhantomView Manual Debug</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            padding: 20px;
+            background: #1a1a2e;
+            color: white;
+        }
+        .debug-section {
+            margin: 20px 0;
+            padding: 15px;
+            border: 1px solid #533483;
+            border-radius: 8px;
+        }
+        .success { color: #10b981; }
+        .error { color: #ef4444; }
+        .warning { color: #f59e0b; }
+        .info { color: #3b82f6; }
+        button {
+            background: #8b5cf6;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        button:hover {
+            background: #a855f7;
+        }
+        .log {
+            background: #2d2d2d;
+            padding: 10px;
+            border-radius: 5px;
+            margin: 10px 0;
+            font-family: monospace;
+            white-space: pre-wrap;
+        }
+    </style>
+</head>
+<body>
+    <h1>PhantomView Extension Debug</h1>
+    
+    <div class="debug-section">
+        <h3>Step 1: Check Extension Loading</h3>
+        <div id="extension-status">Checking...</div>
+        <button onclick="checkExtension()">Check Extension</button>
+    </div>
+    
+    <div class="debug-section">
+        <h3>Step 2: Manual Extension Test</h3>
+        <p>If the extension is loaded, try these tests:</p>
+        <button onclick="testWindowCreation()">Test Window Creation</button>
+        <button onclick="testBackgroundScript()">Test Background Script</button>
+        <button onclick="testTradingSite()">Test Trading Site Detection</button>
+    </div>
+    
+    <div class="debug-section">
+        <h3>Step 3: Troubleshooting Steps</h3>
+        <ol>
+            <li>Go to <code>chrome://extensions/</code></li>
+            <li>Make sure "Developer mode" is ON (top-right toggle)</li>
+            <li>Look for "PhantomView" in the list</li>
+            <li>If it's there, click "Reload"</li>
+            <li>If it's not there, click "Load unpacked" and select the phantomview folder</li>
+            <li>Check for any error messages in red</li>
+        </ol>
+    </div>
+    
+    <div class="debug-section">
+        <h3>Step 4: Console Logs</h3>
+        <div id="logs" class="log"></div>
+        <button onclick="clearLogs()">Clear Logs</button>
+    </div>
+
+    <script>
+        // Override console.log to capture logs
+        const originalLog = console.log;
+        const originalError = console.error;
+        
+        function addLog(message, type = 'log') {
+            const logsDiv = document.getElementById('logs');
+            const timestamp = new Date().toLocaleTimeString();
+            const logEntry = `[${timestamp}] ${type.toUpperCase()}: ${message}\n`;
+            logsDiv.textContent += logEntry;
+        }
+        
+        console.log = function(...args) {
+            originalLog.apply(console, args);
+            addLog(args.join(' '), 'log');
+        };
+        
+        console.error = function(...args) {
+            originalError.apply(console, args);
+            addLog(args.join(' '), 'error');
+        };
+        
+        function checkExtension() {
+            const statusDiv = document.getElementById('extension-status');
+            
+            if (typeof chrome !== 'undefined' && chrome.runtime) {
+                try {
+                    const manifest = chrome.runtime.getManifest();
+                    statusDiv.innerHTML = `
+                        <div class="success">✅ Extension API Available</div>
+                        <div class="info">Extension ID: ${chrome.runtime.id}</div>
+                        <div class="info">Manifest Version: ${manifest.manifest_version}</div>
+                        <div class="info">Name: ${manifest.name}</div>
+                        <div class="success">🎉 Extension is working!</div>
+                    `;
+                } catch (error) {
+                    statusDiv.innerHTML = `
+                        <div class="warning">⚠️ Extension API Available but Error</div>
+                        <div class="error">Error: ${error.message}</div>
+                    `;
+                }
+            } else {
+                statusDiv.innerHTML = `
+                    <div class="error">❌ Extension API Not Available</div>
+                    <div class="info">Make sure the extension is loaded in Chrome</div>
+                `;
+            }
+        }
+        
+        function testWindowCreation() {
+            console.log('Testing window creation...');
+            if (typeof chrome !== 'undefined' && chrome.windows) {
+                chrome.windows.create({
+                    url: 'popup.html',
+                    type: 'popup',
+                    width: 450,
+                    height: 600
+                }, function(window) {
+                    if (chrome.runtime.lastError) {
+                        console.error('Error creating window:', chrome.runtime.lastError);
+                    } else {
+                        console.log('Window created successfully:', window);
+                    }
+                });
+            } else {
+                console.error('Windows API not available');
+            }
+        }
+        
+        function testBackgroundScript() {
+            console.log('Testing background script...');
+            if (typeof chrome !== 'undefined' && chrome.runtime) {
+                chrome.runtime.sendMessage({action: 'test'}, function(response) {
+                    if (chrome.runtime.lastError) {
+                        console.error('Background script error:', chrome.runtime.lastError);
+                    } else {
+                        console.log('Background script response:', response);
+                    }
+                });
+            } else {
+                console.error('Runtime API not available');
+            }
+        }
+        
+        function testTradingSite() {
+            console.log('Testing trading site detection...');
+            if (typeof chrome !== 'undefined' && chrome.tabs) {
+                chrome.tabs.query({active: true, currentWindow: true}, function(tabs) {
+                    if (tabs[0]) {
+                        console.log('Current tab URL:', tabs[0].url);
+                        chrome.tabs.sendMessage(tabs[0].id, {action: 'checkTradingSite'}, function(response) {
+                            if (chrome.runtime.lastError) {
+                                console.error('Content script error:', chrome.runtime.lastError);
+                            } else {
+                                console.log('Trading site response:', response);
+                            }
+                        });
+                    }
+                });
+            } else {
+                console.error('Tabs API not available');
+            }
+        }
+        
+        function clearLogs() {
+            document.getElementById('logs').textContent = '';
+        }
+        
+        // Auto-check extension on load
+        window.addEventListener('load', function() {
+            console.log('Debug page loaded');
+            checkExtension();
+        });
+    </script>
+</body>
+</html> 

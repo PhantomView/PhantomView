@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PhantomView - Coin Not Found Test</title>
+    <link rel="stylesheet" href="coin-not-found.css">
+    <style>
+        body {
+            width: 100vw;
+            height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            background: #1a1a2e;
+        }
+        .test-container {
+            border: 2px solid #533483;
+            border-radius: 16px;
+            overflow: hidden;
+            width: 450px;
+            height: 600px;
+        }
+    </style>
+</head>
+<body>
+    <div class="test-container">
+        <div class="container">
+            <!-- Header Section -->
+            <div class="header">
+                <div class="logo-section">
+                    <div class="logo">
+                        <div class="moon-icon">
+                            <div class="moon-body"></div>
+                            <div class="moon-glow"></div>
+                        </div>
+                    </div>
+                    <h1 class="title">PhantomView</h1>
+                </div>
+                
+                <button class="close-btn" id="closeBtn">×</button>
+            </div>
+
+            <!-- Error Content -->
+            <div class="error-content">
+                <div class="error-icon">
+                    <div class="error-circle">
+                        <span class="error-x">×</span>
+                    </div>
+                </div>
+                
+                <div class="error-message">
+                    Coin not found
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <script src="coin-not-found.js"></script>
+</body>
+</html> 

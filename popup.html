@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PhantomView</title>
+    <link rel="stylesheet" href="popup.css">
+</head>
+<body>
+    <div class="container">
+        <!-- Header Section -->
+        <div class="header">
+            <div class="logo-section">
+                <div class="logo">
+                    <div class="moon-icon">
+                        <div class="moon-body"></div>
+                        <div class="moon-glow"></div>
+                    </div>
+                </div>
+                <h1 class="title">PhantomView</h1>
+            </div>
+            
+            <!-- Header Stats -->
+            <div class="header-stats">
+                <div class="stat-item">
+                    <span class="stat-label">Insiders</span>
+                </div>
+                <div class="stat-item">
+                    <span class="stat-value">9.72%</span>
+                    <span class="stat-label">Bundlers</span>
+                </div>
+                <div class="stat-item">
+                    <span class="stat-value">99.99%</span>
+                    <span class="stat-label">LP Burned</span>
+                </div>
+            </div>
+            
+            <button class="close-btn" id="closeBtn">×</button>
+        </div>
+
+        <!-- Main Content Area -->
+        <div class="main-content">
+            <!-- Input Section -->
+            <div class="input-section">
+                <input type="text" id="usernameInput" placeholder="Enter username" class="username-input">
+            </div>
+
+            <!-- Background Stats -->
+            <div class="background-stats">
+                <div class="stat-item">
+                    <span class="stat-value">2250</span>
+                    <span class="stat-label">Holders</span>
+                </div>
+                <div class="stat-item">
+                    <span class="stat-value">67</span>
+                    <span class="stat-label">Pro Traders</span>
+                </div>
+                <div class="stat-item">
+                    <span class="stat-label">Dex Paid</span>
+                </div>
+            </div>
+
+            <!-- Join Button -->
+            <div class="button-section">
+                <button id="joinBtn" class="join-btn">Join</button>
+            </div>
+        </div>
+    </div>
+    
+    <script src="popup.js"></script>
+</body>
+</html>

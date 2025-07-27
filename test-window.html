@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PhantomView - Window Test</title>
+    <link rel="stylesheet" href="popup.css">
+    <style>
+        body {
+            width: 100vw;
+            height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            background: #1a1a2e;
+        }
+        .test-container {
+            border: 2px solid #533483;
+            border-radius: 16px;
+            overflow: hidden;
+            width: 450px;
+            height: 600px;
+        }
+    </style>
+</head>
+<body>
+    <div class="test-container">
+        <div class="container">
+            <!-- Header Section -->
+            <div class="header">
+                <div class="logo-section">
+                    <div class="logo">
+                        <div class="moon-icon">
+                            <div class="moon-body"></div>
+                            <div class="moon-glow"></div>
+                        </div>
+                    </div>
+                    <h1 class="title">PhantomView</h1>
+                </div>
+                
+                <!-- Header Stats -->
+                <div class="header-stats">
+                    <div class="stat-item">
+                        <span class="stat-label">Insiders</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-value">9.72%</span>
+                        <span class="stat-label">Bundlers</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-value">99.99%</span>
+                        <span class="stat-label">LP Burned</span>
+                    </div>
+                </div>
+                
+                <button class="close-btn" id="closeBtn">×</button>
+            </div>
+
+            <!-- Main Content Area -->
+            <div class="main-content">
+                <!-- Input Section -->
+                <div class="input-section">
+                    <input type="text" id="usernameInput" placeholder="Enter username" class="username-input">
+                </div>
+
+                <!-- Background Stats -->
+                <div class="background-stats">
+                    <div class="stat-item">
+                        <span class="stat-value">2250</span>
+                        <span class="stat-label">Holders</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-value">67</span>
+                        <span class="stat-label">Pro Traders</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-label">Dex Paid</span>
+                    </div>
+                </div>
+
+                <!-- Join Button -->
+                <div class="button-section">
+                    <button id="joinBtn" class="join-btn">Join</button>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <script src="popup.js"></script>
+</body>
+</html> 
