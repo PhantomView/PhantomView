@@ -875,10 +875,15 @@ function openChatroom(tabId, username, caAddress, coinName) {
             .message-persistent-reactions {
                 position: absolute !important;
                 top: -8px !important;
-                right: 8px !important;
                 display: flex !important;
                 gap: 4px !important;
                 z-index: 2147483648 !important;
+            }
+            .message.own .message-persistent-reactions {
+                left: 8px !important;
+            }
+            .message.other .message-persistent-reactions {
+                right: 8px !important;
             }
             .persistent-reaction {
                 background: rgba(255, 255, 255, 0.1) !important;
