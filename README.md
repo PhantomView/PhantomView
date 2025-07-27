@@ -48,7 +48,7 @@ A Google Chrome extension that provides live viewer analytics and chat interface
 
 ### **From Source:**
 ```bash
-git clone https://github.com/your-username/PhantomView.git
+git clone https://github.com/PhantomView/PhantomView.git
 cd PhantomView
 # Follow manual installation steps above
 ```
@@ -141,8 +141,8 @@ This project is licensed under the MIT License - see the LICENSE file for detail
 ## 📞 Support
 
 - **Email**: developer@phantomview.org
-- **Issues**: [GitHub Issues](https://github.com/your-username/PhantomView/issues)
-- **Discussions**: [GitHub Discussions](https://github.com/your-username/PhantomView/discussions)
+- **Issues**: [GitHub Issues](https://github.com/PhantomView/PhantomView/issues)
+- **Discussions**: [GitHub Discussions](https://github.com/PhantomView/PhantomView/discussions)
 
 ## 🔄 Version History
 
@@ -153,11 +153,12 @@ This project is licensed under the MIT License - see the LICENSE file for detail
 - Updated cursor to hand icons
 - Improved icon sizing and optimization
 
-### **v1.0.0** (Previous)
-- Initial release with basic analytics
-- Overlay system implementation
-- Multi-site support
-- Basic chat interface
+### **v0.2.5** (Previous)
+- Channel-based chat system
+- Multi-screen setup process
+- User management features
+- Social media integration
+- Manual overlay control
 
 ---
 
