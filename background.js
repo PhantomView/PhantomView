@@ -1337,6 +1337,29 @@ function openChatroom(tabId, username, caAddress, coinName) {
                     </button>
                 `;
                 
+                // Calculate position based on message size and position
+                const messageRect = messageElement.getBoundingClientRect();
+                const isOwnMessage = messageElement.classList.contains('own');
+                
+                // Adjust position for small messages
+                if (isOwnMessage) {
+                    // For own messages (right-aligned), position popup to the left
+                    reactionsPopup.style.left = 'auto';
+                    reactionsPopup.style.right = '0px';
+                } else {
+                    // For other messages (left-aligned), check if message is small
+                    const messageWidth = messageRect.width;
+                    if (messageWidth < 150) {
+                        // Small message - position popup further right
+                        reactionsPopup.style.left = 'auto';
+                        reactionsPopup.style.right = '-30px';
+                    } else {
+                        // Normal message - standard position
+                        reactionsPopup.style.left = 'auto';
+                        reactionsPopup.style.right = '0px';
+                    }
+                }
+                
                 // Function to hide reactions
                 function hideReactions() {
                     if (reactionsPopup.parentNode) {
