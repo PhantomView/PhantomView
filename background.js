@@ -856,7 +856,7 @@ function openChatroom(tabId, username, caAddress, coinName) {
             }
             .message-reactions {
                 position: absolute !important;
-                bottom: -45px !important;
+                bottom: -50px !important;
                 right: 0 !important;
                 background: rgba(17, 17, 17, 0.98) !important;
                 border: 2px solid rgba(255, 255, 255, 0.3) !important;
@@ -870,6 +870,7 @@ function openChatroom(tabId, username, caAddress, coinName) {
                 animation: fadeIn 0.2s ease-out !important;
                 min-width: 120px !important;
                 max-width: 200px !important;
+                pointer-events: auto !important;
             }
             .message-persistent-reactions {
                 position: absolute !important;
@@ -1265,7 +1266,7 @@ function openChatroom(tabId, username, caAddress, coinName) {
                     reactionTimeout = setTimeout(() => {
                         console.log('Hold timer completed - showing reactions', messageElement.dataset.messageKey);
                         showReactions(messageElement, reactions);
-                    }, 200); // 200ms hold (much faster)
+                    }, 300); // 300ms hold (slightly longer for stability)
                 });
                 
                 messageElement.addEventListener('mouseup', function(e) {
@@ -1290,7 +1291,7 @@ function openChatroom(tabId, username, caAddress, coinName) {
                     reactionTimeout = setTimeout(() => {
                         console.log('Touch hold timer completed - showing reactions', messageElement.dataset.messageKey);
                         showReactions(messageElement, reactions);
-                    }, 200); // 200ms hold (much faster)
+                    }, 300); // 300ms hold (slightly longer for stability)
                 });
                 
                 messageElement.addEventListener('touchend', function(e) {
@@ -1371,12 +1372,12 @@ function openChatroom(tabId, username, caAddress, coinName) {
                 // Add click-outside listener to hide reactions
                 setTimeout(() => {
                     document.addEventListener('click', function hideOnClickOutside(e) {
-                        if (!reactionsPopup.contains(e.target) && !messageElement.querySelector('.message-content').contains(e.target)) {
+                        if (!reactionsPopup.contains(e.target) && !messageElement.contains(e.target)) {
                             hideReactions();
                             document.removeEventListener('click', hideOnClickOutside);
                         }
                     });
-                }, 100);
+                }, 200);
             }
             
             // Function to update message reactions in Firebase
@@ -1543,38 +1544,43 @@ function openChatroom(tabId, username, caAddress, coinName) {
                         // Set message key for reaction tracking
                         messageElement.dataset.messageKey = key;
                         
+                        // Create message with empty reactions first
+                        messageElement.innerHTML = `
+                            <div class="message-header">${messageData.username}</div>
+                            <div class="message-content">${messageData.message}</div>
+                            <div class="message-persistent-reactions"></div>
+                        `;
+                        addReactionFunctionality(messageElement);
+                        chatMessages.appendChild(messageElement);
+                        
                         // Fetch reactions for this message
                         const sanitizedCA = caAddress.replace(/[^A-Za-z0-9]/g, '');
                         const reactionsRef = `${firebaseConfig.databaseURL}/chats/${sanitizedCA}/activeMessages/${key}/reactions.json`;
                         
-                        fetch(reactionsRef).then(response => response.json()).then(reactionsData => {
+                        console.log('Fetching reactions for message:', key, 'from:', reactionsRef);
+                        
+                        fetch(reactionsRef).then(response => {
+                            console.log('Reactions response status:', response.status);
+                            return response.json();
+                        }).then(reactionsData => {
+                            console.log('Reactions data received:', reactionsData);
                             let reactionsHTML = '';
-                            if (reactionsData) {
+                            if (reactionsData && typeof reactionsData === 'object') {
                                 Object.entries(reactionsData).forEach(([emoji, count]) => {
                                     if (count > 0) {
                                         reactionsHTML += `<div class="persistent-reaction">${emoji} ${count}</div>`;
+                                        console.log('Adding reaction display:', emoji, count);
                                     }
                                 });
                             }
                             
-                            messageElement.innerHTML = `
-                                <div class="message-header">${messageData.username}</div>
-                                <div class="message-content">${messageData.message}</div>
-                                <div class="message-persistent-reactions">
-                                    ${reactionsHTML}
-                                </div>
-                            `;
-                            addReactionFunctionality(messageElement);
-                            chatMessages.appendChild(messageElement);
+                            if (reactionsHTML) {
+                                const persistentReactions = messageElement.querySelector('.message-persistent-reactions');
+                                persistentReactions.innerHTML = reactionsHTML;
+                                console.log('Updated persistent reactions for message:', key);
+                            }
                         }).catch(error => {
-                            console.error('Error fetching reactions for message:', error);
-                            messageElement.innerHTML = `
-                                <div class="message-header">${messageData.username}</div>
-                                <div class="message-content">${messageData.message}</div>
-                                <div class="message-persistent-reactions"></div>
-                            `;
-                            addReactionFunctionality(messageElement);
-                            chatMessages.appendChild(messageElement);
+                            console.error('Error fetching reactions for message:', key, error);
                         });
                     }
                 });
