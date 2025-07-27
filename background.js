@@ -1132,6 +1132,10 @@ function openChatroom(tabId, username, caAddress, coinName) {
                         clearInterval(window.cleanupInterval);
                         window.cleanupInterval = null;
                     }
+                    if (window.reactionInterval) {
+                        clearInterval(window.reactionInterval);
+                        window.reactionInterval = null;
+                    }
                     
                     overlay.remove();
                 });
@@ -1371,10 +1375,11 @@ function openChatroom(tabId, username, caAddress, coinName) {
                                                     // Update reaction in Firebase
                         updateMessageReaction(messageKey, reaction, caAddress);
                         
-                        // Refresh all message reactions after a short delay
+                        // Refresh all message reactions immediately and then again after a delay
+                        refreshAllMessageReactions();
                         setTimeout(() => {
                             refreshAllMessageReactions();
-                        }, 1000);
+                        }, 500);
                     }
                     
                     // Add visual feedback
@@ -1587,9 +1592,15 @@ function openChatroom(tabId, username, caAddress, coinName) {
                     });
                 }, 30000);
                 
+                // Also poll for reaction updates every 200ms
+                const reactionInterval = setInterval(() => {
+                    refreshAllMessageReactions();
+                }, 200);
+                
                 // Store intervals for cleanup when chatroom closes
                 window.messageInterval = messageInterval;
                 window.cleanupInterval = cleanupInterval;
+                window.reactionInterval = reactionInterval;
             }
             
             // Store last message keys to avoid re-rendering all messages
