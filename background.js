@@ -887,9 +887,9 @@ function openChatroom(tabId, username, caAddress, coinName) {
                 z-index: 2147483648 !important;
             }
             .message.own .message-persistent-reactions {
-                right: 100% !important;
-                margin-right: -15px !important;
-                justify-content: flex-end !important;
+                left: 100% !important;
+                margin-left: -15px !important;
+                justify-content: flex-start !important;
             }
             .message.other .message-persistent-reactions {
                 right: 100% !important;
