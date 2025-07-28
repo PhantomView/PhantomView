@@ -1574,11 +1574,15 @@ function openChatroom(tabId, username, caAddress, coinName) {
                                     });
                                 }
                                 
-                                if (reactionsHTML) {
-                                    const persistentReactions = messageElement.querySelector('.message-persistent-reactions');
-                                    if (persistentReactions) {
+                                const persistentReactions = messageElement.querySelector('.message-persistent-reactions');
+                                if (persistentReactions) {
+                                    if (reactionsHTML) {
                                         persistentReactions.innerHTML = reactionsHTML;
                                         console.log('Updated persistent reactions for message:', messageKey, 'HTML:', reactionsHTML);
+                                    } else {
+                                        // Clear reactions if no active reactions
+                                        persistentReactions.innerHTML = '';
+                                        console.log('Cleared persistent reactions for message:', messageKey);
                                     }
                                 }
                             }
