@@ -1434,68 +1434,92 @@ function openChatroom(tabId, username, caAddress, coinName) {
             // Function to update message reactions in Firebase
             function updateMessageReaction(messageKey, reaction, caAddress) {
                 const sanitizedCA = caAddress.replace(/[^A-Za-z0-9]/g, '');
-                const messageRef = `${firebaseConfig.databaseURL}/chats/${sanitizedCA}/activeMessages/${messageKey}/reactions/${reaction}.json`;
+                const userReactionRef = `${firebaseConfig.databaseURL}/chats/${sanitizedCA}/activeMessages/${messageKey}/userReactions/${currentUsername}/${reaction}.json`;
+                const totalReactionRef = `${firebaseConfig.databaseURL}/chats/${sanitizedCA}/activeMessages/${messageKey}/reactions/${reaction}.json`;
                 const orderRef = `${firebaseConfig.databaseURL}/chats/${sanitizedCA}/activeMessages/${messageKey}/reactionOrder.json`;
                 
-                console.log('Updating reaction:', reaction, 'for message:', messageKey, 'at URL:', messageRef);
+                console.log('Updating reaction:', reaction, 'for message:', messageKey, 'by user:', currentUsername);
                 
-                // Get current reaction count and increment
-                fetch(messageRef).then(response => {
-                    console.log('Fetch response status:', response.status);
+                // Check if current user has already reacted
+                fetch(userReactionRef).then(response => {
                     if (!response.ok) {
                         throw new Error(`HTTP ${response.status}: ${response.statusText}`);
                     }
                     return response.json();
-                }).then(currentCount => {
-                    console.log('Current reaction count:', currentCount);
-                    const currentReactionCount = currentCount || 0;
+                }).then(userHasReacted => {
+                    const hasReacted = userHasReacted === true;
                     
-                    // Toggle behavior: if reaction exists, remove it; if not, add it
-                    let newCount;
-                    if (currentReactionCount > 0) {
-                        // Remove reaction (decrement)
-                        newCount = currentReactionCount - 1;
-                        console.log('Removing reaction, new count will be:', newCount);
-                    } else {
-                        // Add reaction (increment)
-                        newCount = currentReactionCount + 1;
-                        console.log('Adding reaction, new count will be:', newCount);
-                    }
+                    // Toggle user's reaction
+                    const newUserReaction = !hasReacted;
                     
-                    // Update reaction count
-                    return fetch(messageRef, {
+                    // Update user's reaction status
+                    return fetch(userReactionRef, {
                         method: 'PUT',
                         headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify(newCount)
+                        body: JSON.stringify(newUserReaction)
                     }).then(response => {
-                        console.log('PUT response status:', response.status);
                         if (response.ok) {
-                            console.log(`Reaction ${reaction} successfully updated to count ${newCount}`);
+                            console.log(`User reaction ${reaction} updated to:`, newUserReaction);
                             
-                            // Update order: add if new reaction, remove if reaction count becomes 0
-                            return fetch(orderRef).then(response => response.json()).then(orderData => {
-                                const order = orderData || [];
-                                
-                                if (newCount > 0 && !order.includes(reaction)) {
-                                    // Add to order if reaction count > 0 and not already in order
-                                    order.push(reaction);
-                                    return fetch(orderRef, {
-                                        method: 'PUT',
-                                        headers: { 'Content-Type': 'application/json' },
-                                        body: JSON.stringify(order)
-                                    });
-                                } else if (newCount === 0 && order.includes(reaction)) {
-                                    // Remove from order if reaction count becomes 0
-                                    const newOrder = order.filter(emoji => emoji !== reaction);
-                                    return fetch(orderRef, {
-                                        method: 'PUT',
-                                        headers: { 'Content-Type': 'application/json' },
-                                        body: JSON.stringify(newOrder)
-                                    });
+                            // Get current total count and update it
+                            return fetch(totalReactionRef).then(response => {
+                                if (!response.ok) {
+                                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
                                 }
+                                return response.json();
+                            }).then(currentTotalCount => {
+                                const totalCount = currentTotalCount || 0;
+                                let newTotalCount;
+                                
+                                if (newUserReaction) {
+                                    // User is adding reaction
+                                    newTotalCount = totalCount + 1;
+                                    console.log('Adding reaction, new total count will be:', newTotalCount);
+                                } else {
+                                    // User is removing reaction
+                                    newTotalCount = totalCount - 1;
+                                    console.log('Removing reaction, new total count will be:', newTotalCount);
+                                }
+                                
+                                // Update total reaction count
+                                return fetch(totalReactionRef, {
+                                    method: 'PUT',
+                                    headers: { 'Content-Type': 'application/json' },
+                                    body: JSON.stringify(newTotalCount)
+                                }).then(response => {
+                                    if (response.ok) {
+                                        console.log(`Total reaction ${reaction} count updated to: ${newTotalCount}`);
+                                        
+                                        // Update order: add if reaction count > 0, remove if reaction count becomes 0
+                                        return fetch(orderRef).then(response => response.json()).then(orderData => {
+                                            const order = orderData || [];
+                                            
+                                            if (newTotalCount > 0 && !order.includes(reaction)) {
+                                                // Add to order if reaction count > 0 and not already in order
+                                                order.push(reaction);
+                                                return fetch(orderRef, {
+                                                    method: 'PUT',
+                                                    headers: { 'Content-Type': 'application/json' },
+                                                    body: JSON.stringify(order)
+                                                });
+                                            } else if (newTotalCount === 0 && order.includes(reaction)) {
+                                                // Remove from order if reaction count becomes 0
+                                                const newOrder = order.filter(emoji => emoji !== reaction);
+                                                return fetch(orderRef, {
+                                                    method: 'PUT',
+                                                    headers: { 'Content-Type': 'application/json' },
+                                                    body: JSON.stringify(newOrder)
+                                                });
+                                            }
+                                        });
+                                    } else {
+                                        console.error('Failed to update total reaction count:', response.status, response.statusText);
+                                    }
+                                    return response;
+                                });
                             });
                         } else {
-                            console.error('Failed to update reaction:', response.status, response.statusText);
+                            console.error('Failed to update user reaction:', response.status, response.statusText);
                         }
                         return response;
                     });
