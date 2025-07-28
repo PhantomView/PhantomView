@@ -888,12 +888,12 @@ function openChatroom(tabId, username, caAddress, coinName) {
             }
             .message.own .message-persistent-reactions {
                 left: 100% !important;
-                margin-left: 8px !important;
+                margin-left: -15px !important;
                 justify-content: flex-start !important;
             }
             .message.other .message-persistent-reactions {
                 left: 100% !important;
-                margin-left: 8px !important;
+                margin-left: -15px !important;
                 justify-content: flex-start !important;
             }
             .persistent-reaction {
