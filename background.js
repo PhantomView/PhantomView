@@ -1510,9 +1510,8 @@ function openChatroom(tabId, username, caAddress, coinName) {
                                 let reactionsHTML = '';
                                 const order = orderData || [];
                                 
-                                // Display reactions in reverse order (first added stays on right)
-                                const reversedOrder = [...order].reverse();
-                                reversedOrder.forEach(emoji => {
+                                // Display reactions in chronological order (first added stays on left, new ones to the right)
+                                order.forEach(emoji => {
                                     const count = reactionsData[emoji];
                                     if (count > 0) {
                                         reactionsHTML += `<div class="persistent-reaction">${emoji} ${count}</div>`;
@@ -1722,9 +1721,8 @@ function openChatroom(tabId, username, caAddress, coinName) {
                             if (reactionsData && typeof reactionsData === 'object' && Object.keys(reactionsData).length > 0) {
                                 const order = orderData || [];
                                 
-                                // Display reactions in reverse order (first added stays on right)
-                                const reversedOrder = [...order].reverse();
-                                reversedOrder.forEach(emoji => {
+                                // Display reactions in chronological order (first added stays on left, new ones to the right)
+                                order.forEach(emoji => {
                                     const count = reactionsData[emoji];
                                     if (count > 0) {
                                         reactionsHTML += `<div class="persistent-reaction">${emoji} ${count}</div>`;
