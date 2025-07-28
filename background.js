@@ -1434,11 +1434,11 @@ function openChatroom(tabId, username, caAddress, coinName) {
             // Function to update message reactions in Firebase
             function updateMessageReaction(messageKey, reaction, caAddress) {
                 const sanitizedCA = caAddress.replace(/[^A-Za-z0-9]/g, '');
-                const userReactionRef = `${firebaseConfig.databaseURL}/chats/${sanitizedCA}/activeMessages/${messageKey}/userReactions/${currentUsername}/${reaction}.json`;
+                const userReactionRef = `${firebaseConfig.databaseURL}/chats/${sanitizedCA}/activeMessages/${messageKey}/userReactions/${username}/${reaction}.json`;
                 const totalReactionRef = `${firebaseConfig.databaseURL}/chats/${sanitizedCA}/activeMessages/${messageKey}/reactions/${reaction}.json`;
                 const orderRef = `${firebaseConfig.databaseURL}/chats/${sanitizedCA}/activeMessages/${messageKey}/reactionOrder.json`;
                 
-                console.log('Updating reaction:', reaction, 'for message:', messageKey, 'by user:', currentUsername);
+                console.log('Updating reaction:', reaction, 'for message:', messageKey, 'by user:', username);
                 
                 // Check if current user has already reacted
                 fetch(userReactionRef).then(response => {
