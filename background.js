@@ -1517,7 +1517,7 @@ function openChatroom(tabId, username, caAddress, coinName) {
                                 order.forEach(emoji => {
                                     const count = reactionsData[emoji];
                                     if (count > 0) {
-                                        reactionsHTML += `<div class="persistent-reaction">${emoji} ${count}</div>`;
+                                        reactionsHTML += `<div class="persistent-reaction">${emoji}</div>`;
                                     }
                                 });
                                 
@@ -1527,7 +1527,7 @@ function openChatroom(tabId, username, caAddress, coinName) {
                                         .filter(([emoji, count]) => count > 0);
                                     
                                     sortedReactions.forEach(([emoji, count]) => {
-                                        reactionsHTML += `<div class="persistent-reaction">${emoji} ${count}</div>`;
+                                        reactionsHTML += `<div class="persistent-reaction">${emoji}</div>`;
                                     });
                                 }
                                 
@@ -1728,7 +1728,7 @@ function openChatroom(tabId, username, caAddress, coinName) {
                                 order.forEach(emoji => {
                                     const count = reactionsData[emoji];
                                     if (count > 0) {
-                                        reactionsHTML += `<div class="persistent-reaction">${emoji} ${count}</div>`;
+                                        reactionsHTML += `<div class="persistent-reaction">${emoji}</div>`;
                                         console.log('Adding reaction display:', emoji, count);
                                     }
                                 });
@@ -1737,7 +1737,7 @@ function openChatroom(tabId, username, caAddress, coinName) {
                                 if (reactionsHTML === '' && order.length === 0) {
                                     Object.entries(reactionsData).forEach(([emoji, count]) => {
                                         if (count > 0) {
-                                            reactionsHTML += `<div class="persistent-reaction">${emoji} ${count}</div>`;
+                                            reactionsHTML += `<div class="persistent-reaction">${emoji}</div>`;
                                             console.log('Adding reaction display (fallback):', emoji, count);
                                         }
                                     });
