@@ -887,11 +887,11 @@ function openChatroom(tabId, username, caAddress, coinName) {
                 z-index: 2147483648 !important;
             }
             .message.own .message-persistent-reactions {
-                left: -15px !important;
+                right: -15px !important;
                 justify-content: flex-start !important;
             }
             .message.other .message-persistent-reactions {
-                right: -25px !important;
+                left: -25px !important;
                 justify-content: flex-end !important;
             }
             .persistent-reaction {
