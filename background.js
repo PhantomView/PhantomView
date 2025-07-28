@@ -1448,8 +1448,19 @@ function openChatroom(tabId, username, caAddress, coinName) {
                     return response.json();
                 }).then(currentCount => {
                     console.log('Current reaction count:', currentCount);
-                    const newCount = (currentCount || 0) + 1;
-                    console.log('New reaction count will be:', newCount);
+                    const currentReactionCount = currentCount || 0;
+                    
+                    // Toggle behavior: if reaction exists, remove it; if not, add it
+                    let newCount;
+                    if (currentReactionCount > 0) {
+                        // Remove reaction (decrement)
+                        newCount = currentReactionCount - 1;
+                        console.log('Removing reaction, new count will be:', newCount);
+                    } else {
+                        // Add reaction (increment)
+                        newCount = currentReactionCount + 1;
+                        console.log('Adding reaction, new count will be:', newCount);
+                    }
                     
                     // Update reaction count
                     return fetch(messageRef, {
@@ -1461,20 +1472,28 @@ function openChatroom(tabId, username, caAddress, coinName) {
                         if (response.ok) {
                             console.log(`Reaction ${reaction} successfully updated to count ${newCount}`);
                             
-                            // Also update the order if this is a new reaction
-                            if (currentCount === 0 || currentCount === null) {
-                                return fetch(orderRef).then(response => response.json()).then(orderData => {
-                                    const order = orderData || [];
-                                    if (!order.includes(reaction)) {
-                                        order.push(reaction);
-                                        return fetch(orderRef, {
-                                            method: 'PUT',
-                                            headers: { 'Content-Type': 'application/json' },
-                                            body: JSON.stringify(order)
-                                        });
-                                    }
-                                });
-                            }
+                            // Update order: add if new reaction, remove if reaction count becomes 0
+                            return fetch(orderRef).then(response => response.json()).then(orderData => {
+                                const order = orderData || [];
+                                
+                                if (newCount > 0 && !order.includes(reaction)) {
+                                    // Add to order if reaction count > 0 and not already in order
+                                    order.push(reaction);
+                                    return fetch(orderRef, {
+                                        method: 'PUT',
+                                        headers: { 'Content-Type': 'application/json' },
+                                        body: JSON.stringify(order)
+                                    });
+                                } else if (newCount === 0 && order.includes(reaction)) {
+                                    // Remove from order if reaction count becomes 0
+                                    const newOrder = order.filter(emoji => emoji !== reaction);
+                                    return fetch(orderRef, {
+                                        method: 'PUT',
+                                        headers: { 'Content-Type': 'application/json' },
+                                        body: JSON.stringify(newOrder)
+                                    });
+                                }
+                            });
                         } else {
                             console.error('Failed to update reaction:', response.status, response.statusText);
                         }
