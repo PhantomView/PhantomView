@@ -1111,7 +1111,7 @@ function openChatroom(tabId, username, caAddress, coinName) {
                     <div class="chatroom-messages" id="chat-messages">
                         <div class="message other system">
                             <div class="message-header">System</div>
-                            <div class="message-content">Welcome to the chat! Messages are temporary and will disappear after 5 minutes.</div>
+                            <div class="message-content">Welcome to PhantomView, CA: ${caAddress}</div>
                         </div>
                     </div>
                     
