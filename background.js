@@ -890,13 +890,13 @@ function openChatroom(tabId, username, caAddress, coinName) {
                 position: absolute !important;
                 top: -8px !important;
                 right: -15px !important;
-                justify-content: flex-start !important;
+                justify-content: flex-end !important;
             }
             .message.other .message-persistent-reactions {
                 position: absolute !important;
                 top: -8px !important;
                 right: -15px !important;
-                justify-content: flex-start !important;
+                justify-content: flex-end !important;
             }
             .persistent-reaction {
                 background: rgba(255, 255, 255, 0.1) !important;
