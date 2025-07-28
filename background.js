@@ -1335,82 +1335,97 @@ function openChatroom(tabId, username, caAddress, coinName) {
                     existingReactions.remove();
                 }
                 
-                // Create reactions popup
-                const reactionsPopup = document.createElement('div');
-                reactionsPopup.className = 'message-reactions';
-                reactionsPopup.innerHTML = `
-                    <button class="reaction-button" data-reaction="❤️">
-                        ❤️ <span class="reaction-count">${reactions['❤️']}</span>
-                    </button>
-                    <button class="reaction-button" data-reaction="👍">
-                        👍 <span class="reaction-count">${reactions['👍']}</span>
-                    </button>
-                    <button class="reaction-button" data-reaction="👎">
-                        👎 <span class="reaction-count">${reactions['👎']}</span>
-                    </button>
-                `;
+                // Get the message key to fetch current reaction counts
+                const messageKey = messageElement.dataset.messageKey;
+                const sanitizedCA = caAddress.replace(/[^A-Za-z0-9]/g, '');
+                const reactionsRef = `${firebaseConfig.databaseURL}/chats/${sanitizedCA}/activeMessages/${messageKey}/reactions.json`;
                 
-                // Calculate position based on message size and position
-                const messageRect = messageElement.getBoundingClientRect();
-                const isOwnMessage = messageElement.classList.contains('own');
-                
-                // Simple positioning - popup will appear above the message
-                // The CSS handles the positioning automatically
-                
-
-                
-                // Function to hide reactions
-                function hideReactions() {
-                    if (reactionsPopup.parentNode) {
-                        reactionsPopup.remove();
-                        console.log('Reactions popup hidden');
+                // Fetch current reaction counts from Firebase
+                fetch(reactionsRef).then(response => {
+                    if (!response.ok) {
+                        throw new Error(`HTTP ${response.status}`);
                     }
-                }
-                
-                // Add click handlers for reactions
-                reactionsPopup.addEventListener('click', function(e) {
-                    if (e.target.classList.contains('reaction-button')) {
-                        const reaction = e.target.dataset.reaction;
-                        
-                        // Get the message key from the message element
-                        const messageKey = messageElement.dataset.messageKey;
-                        if (messageKey) {
-                                                    // Update reaction in Firebase
-                        updateMessageReaction(messageKey, reaction, caAddress);
-                        
-                        // Refresh all message reactions immediately and then again after a delay
-                        refreshAllMessageReactions();
-                        setTimeout(() => {
-                            refreshAllMessageReactions();
-                        }, 500);
-                    }
+                    return response.json();
+                }).then(currentReactions => {
+                    console.log('Current reactions from Firebase:', currentReactions);
                     
-                    // Add visual feedback
-                    e.target.style.background = 'rgba(59, 130, 246, 0.3)';
-                    setTimeout(() => {
-                        e.target.style.background = '';
-                    }, 200);
-                    
-                    console.log(`Reaction added: ${reaction} to message`);
-                    
-                    // Hide reactions after clicking a reaction
-                    setTimeout(hideReactions, 300);
-                    }
-                });
-                
-                // Add reactions to message
-                messageElement.appendChild(reactionsPopup);
-                console.log('Reactions popup added to message');
-                
-                // Add click-outside listener to hide reactions
-                setTimeout(() => {
-                    document.addEventListener('click', function hideOnClickOutside(e) {
-                        if (!reactionsPopup.contains(e.target) && !messageElement.contains(e.target)) {
-                            hideReactions();
-                            document.removeEventListener('click', hideOnClickOutside);
-                        }
-                    });
-                }, 200);
+                                         // Create reactions popup with current counts
+                     const reactionsPopup = document.createElement('div');
+                     reactionsPopup.className = 'message-reactions';
+                     reactionsPopup.innerHTML = `
+                         <button class="reaction-button" data-reaction="❤️">
+                             ❤️ <span class="reaction-count">${currentReactions['❤️'] || 0}</span>
+                         </button>
+                         <button class="reaction-button" data-reaction="👍">
+                             👍 <span class="reaction-count">${currentReactions['👍'] || 0}</span>
+                         </button>
+                         <button class="reaction-button" data-reaction="👎">
+                             👎 <span class="reaction-count">${currentReactions['👎'] || 0}</span>
+                         </button>
+                     `;
+                     
+                     // Calculate position based on message size and position
+                     const messageRect = messageElement.getBoundingClientRect();
+                     const isOwnMessage = messageElement.classList.contains('own');
+                     
+                     // Simple positioning - popup will appear above the message
+                     // The CSS handles the positioning automatically
+                     
+                     // Function to hide reactions
+                     function hideReactions() {
+                         if (reactionsPopup.parentNode) {
+                             reactionsPopup.remove();
+                             console.log('Reactions popup hidden');
+                         }
+                     }
+                     
+                     // Add click handlers for reactions
+                     reactionsPopup.addEventListener('click', function(e) {
+                         if (e.target.classList.contains('reaction-button')) {
+                             const reaction = e.target.dataset.reaction;
+                             
+                             // Get the message key from the message element
+                             const messageKey = messageElement.dataset.messageKey;
+                             if (messageKey) {
+                                 // Update reaction in Firebase
+                                 updateMessageReaction(messageKey, reaction, caAddress);
+                                 
+                                 // Refresh all message reactions immediately and then again after a delay
+                                 refreshAllMessageReactions();
+                                 setTimeout(() => {
+                                     refreshAllMessageReactions();
+                                 }, 500);
+                             }
+                             
+                             // Add visual feedback
+                             e.target.style.background = 'rgba(59, 130, 246, 0.3)';
+                             setTimeout(() => {
+                                 e.target.style.background = '';
+                             }, 200);
+                             
+                             console.log(`Reaction added: ${reaction} to message`);
+                             
+                             // Hide reactions after clicking a reaction
+                             setTimeout(hideReactions, 300);
+                         }
+                     });
+                     
+                     // Add reactions to message
+                     messageElement.appendChild(reactionsPopup);
+                     console.log('Reactions popup added to message');
+                     
+                     // Add click-outside listener to hide reactions
+                     setTimeout(() => {
+                         document.addEventListener('click', function hideOnClickOutside(e) {
+                             if (!reactionsPopup.contains(e.target) && !messageElement.contains(e.target)) {
+                                 hideReactions();
+                                 document.removeEventListener('click', hideOnClickOutside);
+                             }
+                         });
+                     }, 200);
+                 }).catch(error => {
+                     console.error('Error fetching reaction counts:', error);
+                 });
             }
             
             // Function to update message reactions in Firebase
