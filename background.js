@@ -1,6 +1,9 @@
 // PhantomView Background Service Worker
 console.log('PhantomView background service worker initialized');
 
+// Import security module
+importScripts('security.js');
+
 // Global variables
 let currentCA = null;
 let currentUsername = null;
@@ -19,35 +22,66 @@ chrome.runtime.onMessage.addListener(function(request, sender, sendResponse) {
         viewerCountElements.forEach(element => {
             element.textContent = request.count.toString();
         });
-            } else if (request.action === 'joinChatroom') {
-            console.log('Join chatroom request received:', request);
+    } else if (request.action === 'joinChatroom') {
+        console.log('Join chatroom request received:', request);
 
-            // Get the tabId from the sender
-            const tabId = sender.tab.id;
-            console.log('Using tabId from sender:', tabId);
+        // Security validation
+        const usernameValidation = phantomViewSecurity.validateUsername(request.username);
+        if (!usernameValidation.valid) {
+            sendResponse({ success: false, error: usernameValidation.error });
+            phantomViewSecurity.logSecurityEvent('INVALID_USERNAME', { 
+                username: request.username, 
+                error: usernameValidation.error 
+            });
+            return true;
+        }
 
-            // Send immediate response to prevent timeout
-            sendResponse({ success: true, message: 'Processing join request...' });
+        // Check if user is blocked
+        if (phantomViewSecurity.isUserBlocked(usernameValidation.username)) {
+            sendResponse({ success: false, error: 'User is blocked' });
+            phantomViewSecurity.logSecurityEvent('BLOCKED_USER_ATTEMPT', { 
+                username: usernameValidation.username 
+            });
+            return true;
+        }
 
-            // Get current CA and coin name from content script
-            chrome.tabs.sendMessage(tabId, {action: 'getCurrentCA'}, function(response) {
-                console.log('CA response:', response);
-                if (chrome.runtime.lastError) {
-                    console.error('Error getting CA:', chrome.runtime.lastError);
+        // Get the tabId from the sender
+        const tabId = sender.tab.id;
+        console.log('Using tabId from sender:', tabId);
+
+        // Send immediate response to prevent timeout
+        sendResponse({ success: true, message: 'Processing join request...' });
+
+        // Get current CA and coin name from content script
+        chrome.tabs.sendMessage(tabId, {action: 'getCurrentCA'}, function(response) {
+            console.log('CA response:', response);
+            if (chrome.runtime.lastError) {
+                console.error('Error getting CA:', chrome.runtime.lastError);
+                return;
+            }
+
+            if (response && response.caAddress) {
+                // Validate CA address
+                const caValidation = phantomViewSecurity.validateCAAddress(response.caAddress);
+                if (!caValidation.valid) {
+                    console.error('Invalid CA address:', caValidation.error);
+                    phantomViewSecurity.logSecurityEvent('INVALID_CA_ADDRESS', { 
+                        caAddress: response.caAddress, 
+                        error: caValidation.error 
+                    });
                     return;
                 }
 
-                if (response && response.caAddress) {
-                    console.log('Opening chatroom with CA:', response.caAddress);
-                    // Get coin name from the checkTradingSite response
-                    chrome.tabs.sendMessage(tabId, {action: 'checkTradingSite'}, function(tradingResponse) {
-                        const coinName = tradingResponse && tradingResponse.coinName ? tradingResponse.coinName : null;
-                        openChatroom(tabId, request.username, response.caAddress, coinName);
-                    });
-                } else {
-                    console.error('No CA address received');
-                }
-            });
+                console.log('Opening chatroom with CA:', caValidation.caAddress);
+                // Get coin name from the checkTradingSite response
+                chrome.tabs.sendMessage(tabId, {action: 'checkTradingSite'}, function(tradingResponse) {
+                    const coinName = tradingResponse && tradingResponse.coinName ? tradingResponse.coinName : null;
+                    openChatroom(tabId, usernameValidation.username, caValidation.caAddress, coinName);
+                });
+            } else {
+                console.error('No CA address received');
+            }
+        });
         
         return true; // Keep message channel open for async response
     }
@@ -1109,10 +1143,6 @@ function openChatroom(tabId, username, caAddress, coinName) {
                     </div>
                     
                     <div class="chatroom-messages" id="chat-messages">
-                        <div class="message other system">
-                            <div class="message-header">System</div>
-                            <div class="message-content">Welcome to PhantomView, CA: ${caAddress}</div>
-                        </div>
                     </div>
                     
                     <div class="chatroom-input-section">
@@ -1144,6 +1174,138 @@ function openChatroom(tabId, username, caAddress, coinName) {
                     }
                     
                     overlay.remove();
+                });
+            }
+            
+
+
+            // Add click to copy official CA functionality
+            const officialCAElement = document.getElementById('official-ca');
+            if (officialCAElement) {
+                officialCAElement.addEventListener('click', function() {
+                    const caAddress = 'UcNEqoS1XDocaXs93YGLD4yMUfApTCyrrjVPWQXbonk';
+                    navigator.clipboard.writeText(caAddress).then(function() {
+                        // Show temporary feedback
+                        const originalText = officialCAElement.textContent;
+                        const originalColor = officialCAElement.style.color;
+                        officialCAElement.textContent = 'CA copied!';
+                        officialCAElement.style.color = '#10b981';
+                        
+                        setTimeout(function() {
+                            officialCAElement.textContent = originalText;
+                            officialCAElement.style.color = originalColor;
+                        }, 1500);
+                    }).catch(function(err) {
+                        console.error('Failed to copy official CA address:', err);
+                        // Fallback for older browsers
+                        const textArea = document.createElement('textarea');
+                        textArea.value = caAddress;
+                        document.body.appendChild(textArea);
+                        textArea.select();
+                        document.execCommand('copy');
+                        document.body.removeChild(textArea);
+                        
+                        // Show feedback
+                        const originalText = officialCAElement.textContent;
+                        const originalColor = officialCAElement.style.color;
+                        officialCAElement.textContent = 'CA copied!';
+                        officialCAElement.style.color = '#10b981';
+                        
+                        setTimeout(function() {
+                            officialCAElement.textContent = originalText;
+                            officialCAElement.style.color = originalColor;
+                        }, 1500);
+                    });
+                });
+            }
+
+            // Add click to copy CA address functionality (under token name)
+            const caAddressElement = document.getElementById('ca-address');
+            if (caAddressElement) {
+                caAddressElement.addEventListener('click', function() {
+                    navigator.clipboard.writeText(caAddress).then(function() {
+                        // Show temporary feedback
+                        const originalText = caAddressElement.textContent;
+                        caAddressElement.textContent = 'CA copied!';
+                        caAddressElement.style.opacity = '1';
+                        caAddressElement.style.color = '#4CAF50';
+                        
+                        setTimeout(function() {
+                            caAddressElement.textContent = originalText;
+                            caAddressElement.style.opacity = '0.7';
+                            caAddressElement.style.color = '';
+                        }, 1500);
+                    }).catch(function(err) {
+                        console.error('Failed to copy CA address:', err);
+                        // Fallback for older browsers
+                        const textArea = document.createElement('textarea');
+                        textArea.value = caAddress;
+                        document.body.appendChild(textArea);
+                        textArea.select();
+                        document.execCommand('copy');
+                        document.body.removeChild(textArea);
+                        
+                        // Show feedback
+                        const originalText = caAddressElement.textContent;
+                        caAddressElement.textContent = 'CA copied!';
+                        caAddressElement.style.opacity = '1';
+                        caAddressElement.style.color = '#4CAF50';
+                        
+                        setTimeout(function() {
+                            caAddressElement.textContent = originalText;
+                            caAddressElement.style.opacity = '0.7';
+                            caAddressElement.style.color = '';
+                        }, 1500);
+                    });
+                });
+            }
+
+
+
+            // Add draggable functionality to the header
+            let isDragging = false;
+            let startX, startY;
+            let startLeft, startTop;
+            const header = overlay.querySelector('.phantomview-header');
+            
+            if (header) {
+                header.addEventListener('mousedown', function(e) {
+                    if (e.target.closest('#phantomview-close')) {
+                        return;
+                    }
+                    
+                    isDragging = true;
+                    header.classList.add('dragging');
+                    
+                    const rect = overlay.getBoundingClientRect();
+                    startX = e.clientX;
+                    startY = e.clientY;
+                    startLeft = rect.left;
+                    startTop = rect.top;
+                    
+                    overlay.style.bottom = 'auto';
+                    overlay.style.right = 'auto';
+                    overlay.style.left = startLeft + 'px';
+                    overlay.style.top = startTop + 'px';
+                });
+                
+                document.addEventListener('mousemove', function(e) {
+                    if (!isDragging) return;
+                    
+                    e.preventDefault();
+                    
+                    const deltaX = e.clientX - startX;
+                    const deltaY = e.clientY - startY;
+                    
+                    overlay.style.left = (startLeft + deltaX) + 'px';
+                    overlay.style.top = (startTop + deltaY) + 'px';
+                });
+                
+                document.addEventListener('mouseup', function() {
+                    if (isDragging) {
+                        isDragging = false;
+                        header.classList.remove('dragging');
+                    }
                 });
             }
             
@@ -1224,52 +1386,72 @@ function openChatroom(tabId, username, caAddress, coinName) {
                     return;
                 }
                 
-                // Sanitize message
-                const message = sanitizeMessage(rawMessage);
-                
-                // Check message length
-                if (message.length < MIN_MESSAGE_LENGTH) {
-                    showWarning('Message too short');
-                    return;
-                }
-                
-                if (message.length > MAX_MESSAGE_LENGTH) {
-                    showWarning('Message too long (max 200 characters)');
-                    return;
-                }
-                
-                // Check for spam
-                if (isSpam()) {
-                    showWarning('Please slow down - too many messages');
-                    return;
-                }
-                
-                // Check for links
-                if (containsLinks(message)) {
-                    showWarning('Links are not allowed for safety');
-                    return;
-                }
-                
-                // Check for suspicious content
-                if (containsSuspiciousContent(message)) {
-                    showWarning('Message contains potentially unsafe content');
-                    return;
-                }
-                
-                // Check for repeated characters (spam)
-                const repeatedChars = /(.)\1{4,}/;
-                if (repeatedChars.test(message)) {
-                    showWarning('Message contains too many repeated characters');
-                    return;
-                }
-                
-                // All checks passed - send message
-                // Clear input first
+                // Clear input immediately for better UX
                 chatInput.value = '';
                 
+                // Local security validation (since phantomViewSecurity isn't available in injected context)
+                const messageValidation = validateMessageLocal(rawMessage, username);
+                if (!messageValidation.valid) {
+                    showWarning(messageValidation.error);
+                    // Restore the message if validation failed
+                    chatInput.value = rawMessage;
+                    return;
+                }
+                
                 // Send message to Firebase for real-time chat
-                sendMessageToFirebase(message, username, caAddress);
-                console.log('Message sent:', message);
+                sendMessageToFirebase(messageValidation.message, username, caAddress);
+                console.log('Message sent:', messageValidation.message);
+            }
+            
+            // Local message validation function for injected script context
+            function validateMessageLocal(message, userId) {
+                if (!message || typeof message !== 'string') {
+                    return { valid: false, error: 'Message is required' };
+                }
+
+                // Quick length check first
+                if (message.length < 1) {
+                    return { valid: false, error: 'Message cannot be empty' };
+                }
+                
+                if (message.length > 200) {
+                    return { valid: false, error: 'Message must be 200 characters or less' };
+                }
+
+                // Fast sanitization - only remove dangerous characters
+                let sanitized = message.trim();
+                sanitized = sanitized.replace(/[<>]/g, ''); // Remove potentially dangerous characters
+                
+                // Quick suspicious content check with optimized patterns
+                const lowerInput = sanitized.toLowerCase();
+                
+                // Combined pattern for faster checking
+                const suspiciousPattern = /(javascript:|on\w+\s*=|iframe|union|select|insert|update|delete|drop|create|alter|cmd|command|exec|system|shell|[;&|`$()]|\.\.\/|\.\.\\|telegram|discord|twitter|t\.me|discord\.gg|t\.co|airdrop|free|claim|reward|bonus|giveaway|click here|verify|confirm|claim now)/gi;
+                
+                if (suspiciousPattern.test(lowerInput)) {
+                    return { valid: false, error: 'Message contains potentially unsafe content' };
+                }
+                
+                // Quick spam check - only check for excessive repeated characters
+                const repeatedChars = /(.)\1{5,}/; // 6+ repeated characters
+                if (repeatedChars.test(sanitized)) {
+                    return { valid: false, error: 'Message contains too many repeated characters' };
+                }
+                
+                // Quick caps check - only for longer messages
+                if (sanitized.length > 15) {
+                    const capsRatio = (sanitized.match(/[A-Z]/g) || []).length / sanitized.length;
+                    if (capsRatio > 0.8) { // Increased threshold for faster processing
+                        return { valid: false, error: 'Message contains too many capital letters' };
+                    }
+                }
+                
+                // Quick link check
+                if (lowerInput.includes('http') || lowerInput.includes('www.')) {
+                    return { valid: false, error: 'Links are not allowed for safety' };
+                }
+                
+                return { valid: true, message: sanitized };
             }
             
             // Reaction functionality
@@ -1433,6 +1615,13 @@ function openChatroom(tabId, username, caAddress, coinName) {
             
             // Function to update message reactions in Firebase
             function updateMessageReaction(messageKey, reaction, caAddress) {
+                // Validate reaction emoji
+                const validReactions = ['❤️', '👍', '👎'];
+                if (!validReactions.includes(reaction)) {
+                    console.log('Invalid reaction attempted:', reaction);
+                    return;
+                }
+                
                 const sanitizedCA = caAddress.replace(/[^A-Za-z0-9]/g, '');
                 const userReactionRef = `${firebaseConfig.databaseURL}/chats/${sanitizedCA}/activeMessages/${messageKey}/userReactions/${username}/${reaction}.json`;
                 const totalReactionRef = `${firebaseConfig.databaseURL}/chats/${sanitizedCA}/activeMessages/${messageKey}/reactions/${reaction}.json`;
@@ -1647,7 +1836,7 @@ function openChatroom(tabId, username, caAddress, coinName) {
                 const sanitizedCA = caAddress.replace(/[^A-Za-z0-9]/g, '');
                 const presenceRef = `${firebaseConfig.databaseURL}/chats/${sanitizedCA}/activeMessages.json`;
                 
-                // Poll for new messages every 100ms (faster updates)
+                // Poll for new messages every 500ms (reduced frequency for better performance)
                 const messageInterval = setInterval(() => {
                     fetch(presenceRef).then(response => response.json()).then(data => {
                         if (data) {
@@ -1667,9 +1856,9 @@ function openChatroom(tabId, username, caAddress, coinName) {
                     }).catch(error => {
                         console.error('Error fetching active messages:', error);
                     });
-                }, 100);
+                }, 500); // Increased from 100ms to 500ms
                 
-                // Cleanup old messages every 30 seconds
+                // Cleanup old messages every 60 seconds (reduced frequency)
                 const cleanupInterval = setInterval(() => {
                     fetch(presenceRef).then(response => response.json()).then(data => {
                         if (data) {
@@ -1695,12 +1884,12 @@ function openChatroom(tabId, username, caAddress, coinName) {
                     }).catch(error => {
                         console.error('Error cleaning up old messages:', error);
                     });
-                }, 30000);
+                }, 60000); // Increased from 30000ms to 60000ms
                 
-                // Also poll for reaction updates every 1000ms (1 second) - less frequent for better performance
+                // Poll for reaction updates every 3000ms (3 seconds) - much less frequent for better performance
                 const reactionInterval = setInterval(() => {
                     refreshAllMessageReactions();
-                }, 1000);
+                }, 3000); // Increased from 1000ms to 3000ms
                 
                 // Store intervals for cleanup when chatroom closes
                 window.messageInterval = messageInterval;
@@ -1739,7 +1928,7 @@ function openChatroom(tabId, username, caAddress, coinName) {
                         // Set message key for reaction tracking
                         messageElement.dataset.messageKey = key;
                         
-                        // Create message with empty reactions first
+                        // Create message with empty reactions first (reactions will be updated separately)
                         messageElement.innerHTML = `
                             <div class="message-header">${messageData.username}</div>
                             <div class="message-content">${messageData.message}</div>
@@ -1747,64 +1936,6 @@ function openChatroom(tabId, username, caAddress, coinName) {
                         `;
                         addReactionFunctionality(messageElement);
                         chatMessages.appendChild(messageElement);
-                        
-                        // Fetch reactions for this message
-                        const sanitizedCA = caAddress.replace(/[^A-Za-z0-9]/g, '');
-                        const reactionsRef = `${firebaseConfig.databaseURL}/chats/${sanitizedCA}/activeMessages/${key}/reactions.json`;
-                        const orderRef = `${firebaseConfig.databaseURL}/chats/${sanitizedCA}/activeMessages/${key}/reactionOrder.json`;
-                        
-                        console.log('Fetching reactions for message:', key, 'from:', reactionsRef);
-                        
-                        // Fetch both reactions and order data in parallel
-                        Promise.all([
-                            fetch(reactionsRef).then(response => {
-                                console.log('Reactions response status:', response.status);
-                                if (!response.ok) {
-                                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
-                                }
-                                return response.json();
-                            }),
-                            fetch(orderRef).then(response => response.json()).catch(() => [])
-                        ]).then(([reactionsData, orderData]) => {
-                            console.log('Reactions data received:', reactionsData, 'Order:', orderData);
-                            let reactionsHTML = '';
-                            if (reactionsData && typeof reactionsData === 'object' && Object.keys(reactionsData).length > 0) {
-                                const order = orderData || [];
-                                
-                                // Display reactions in chronological order (first added stays on left, new ones to the right)
-                                order.forEach(emoji => {
-                                    const count = reactionsData[emoji];
-                                    if (count > 0) {
-                                        reactionsHTML += `<div class="persistent-reaction">${emoji}</div>`;
-                                        console.log('Adding reaction display:', emoji, count);
-                                    }
-                                });
-                                
-                                // If no order data or empty order, fallback to original order
-                                if (reactionsHTML === '' && order.length === 0) {
-                                    Object.entries(reactionsData).forEach(([emoji, count]) => {
-                                        if (count > 0) {
-                                            reactionsHTML += `<div class="persistent-reaction">${emoji}</div>`;
-                                            console.log('Adding reaction display (fallback):', emoji, count);
-                                        }
-                                    });
-                                }
-                            }
-                            
-                            if (reactionsHTML) {
-                                const persistentReactions = messageElement.querySelector('.message-persistent-reactions');
-                                if (persistentReactions) {
-                                    persistentReactions.innerHTML = reactionsHTML;
-                                    console.log('Updated persistent reactions for message:', key, 'HTML:', reactionsHTML);
-                                } else {
-                                    console.error('Persistent reactions container not found for message:', key);
-                                }
-                            } else {
-                                console.log('No reactions to display for message:', key);
-                            }
-                        }).catch(error => {
-                            console.error('Error fetching reactions for message:', key, error);
-                        });
                     }
                 });
 
@@ -1838,91 +1969,58 @@ function openChatroom(tabId, username, caAddress, coinName) {
             let usersPopup = null;
             let isUsersPopupOpen = false;
             
-            // --- USER PRESENCE TRACKING ---
-            function setUserOnline(username, caAddress) {
-                const sanitizedCA = caAddress.replace(/[^A-Za-z0-9]/g, '');
-                // Use a simple key for the username to avoid encoding issues
-                const userKey = username.replace(/[^A-Za-z0-9]/g, '_');
-                const userRef = `${firebaseConfig.databaseURL}/chats/${sanitizedCA}/onlineUsers/${userKey}.json`;
-                console.log('Setting user online:', username, 'at:', userRef);
-                fetch(userRef, {
-                    method: 'PUT',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ username: username, timestamp: Date.now() })
-                }).then(response => {
-                    if (response.ok) {
-                        console.log('User set online successfully:', username);
-                    } else {
-                        console.error('Failed to set user online:', response.status);
-                    }
-                }).catch(error => {
-                    console.error('Error setting user online:', error);
-                });
-            }
-
-            function setUserOffline(username, caAddress) {
-                const sanitizedCA = caAddress.replace(/[^A-Za-z0-9]/g, '');
-                // Use a simple key for the username to avoid encoding issues
-                const userKey = username.replace(/[^A-Za-z0-9]/g, '_');
-                const userRef = `${firebaseConfig.databaseURL}/chats/${sanitizedCA}/onlineUsers/${userKey}.json`;
-                fetch(userRef, { method: 'DELETE' });
-            }
-
-            function pollOnlineUsers(caAddress, updateCallback) {
-                const sanitizedCA = caAddress.replace(/[^A-Za-z0-9]/g, '');
-                const usersRef = `${firebaseConfig.databaseURL}/chats/${sanitizedCA}/onlineUsers.json`;
-                console.log('Polling online users from:', usersRef);
-                setInterval(() => {
-                    fetch(usersRef).then(r => r.json()).then(data => {
-                        console.log('Online users data received:', data);
-                        if (data) {
-                            // Extract usernames from the user objects
-                            const usernames = Object.values(data).map(user => user.username).filter(Boolean);
-                            console.log('Extracted usernames:', usernames);
-                            updateCallback(usernames);
-                        } else {
-                            console.log('No online users data');
-                            updateCallback([]);
-                        }
-                    }).catch(error => {
-                        console.error('Error polling online users:', error);
-                        updateCallback([]);
-                    });
-                }, 500);
-            }
-
-            // --- INTEGRATE INTO CHATROOM UI ---
-            setUserOnline(username, caAddress);
-            window.addEventListener('beforeunload', function() {
-                setUserOffline(username, caAddress);
-            });
-
-            let onlineUsernames = [username];
-            pollOnlineUsers(caAddress, function(usernames) {
-                console.log('Online users received:', usernames);
-                onlineUsernames = usernames;
-                // Update the online count in the UI
-                const viewerCountElement = document.getElementById('viewer-count');
-                if (viewerCountElement) {
-                    viewerCountElement.textContent = usernames.length;
-                    console.log('Updated viewer count to:', usernames.length);
-                }
-            });
-            
             function createUsersPopup() {
                 const popup = document.createElement('div');
                 popup.className = 'users-popup';
+                
+                // Create user list HTML
+                let userListHTML = '';
+                let actualUserCount = 1; // Start with current user
+                
+                // Add all users from the global online users array
+                if (window.onlineUsernames && window.onlineUsernames.length > 0) {
+                    console.log('Adding users to popup:', window.onlineUsernames);
+                    
+                    // Remove duplicates and filter out current user from the array
+                    const uniqueOtherUsers = [...new Set(window.onlineUsernames)].filter(user => user !== username);
+                    console.log('Unique other users:', uniqueOtherUsers);
+                    
+                    // First, add the current user at the top
+                    userListHTML += `
+                        <div class="user-item current">
+                            <div class="user-avatar">${username.charAt(0).toUpperCase()}</div>
+                            <div>${username} (You)</div>
+                        </div>
+                    `;
+                    
+                    // Then add all other unique users
+                    uniqueOtherUsers.forEach(user => {
+                        console.log(`Adding other user: ${user}`);
+                        userListHTML += `
+                            <div class="user-item">
+                                <div class="user-avatar">${user.charAt(0).toUpperCase()}</div>
+                                <div>${user}</div>
+                            </div>
+                        `;
+                        actualUserCount++; // Increment count for each additional user
+                    });
+                } else {
+                    console.log('No online users data, showing fallback');
+                    // Fallback to just showing current user if no data
+                    userListHTML = `
+                        <div class="user-item current">
+                            <div class="user-avatar">${username.charAt(0).toUpperCase()}</div>
+                            <div>${username} (You)</div>
+                        </div>
+                    `;
+                }
+                
                 popup.innerHTML = `
                     <div class="users-popup-header">
-                        <span>Online Users (${onlineUsernames.length})</span>
+                        <span>Online Users (${actualUserCount})</span>
                         <button class="users-popup-close" id="users-popup-close">×</button>
                     </div>
-                    ${onlineUsernames.map(u => `
-                        <div class="user-item${u === username ? ' current' : ''}">
-                            <div class="user-avatar">${u.charAt(0).toUpperCase()}</div>
-                            <div>${u}${u === username ? ' (You)' : ''}</div>
-                        </div>
-                    `).join('')}
+                    ${userListHTML}
                 `;
                 return popup;
             }
@@ -2011,93 +2109,325 @@ function openChatroom(tabId, username, caAddress, coinName) {
                 }
             }
             
-            onlineUsersSection.addEventListener('click', toggleUsersPopup);
-            
-            // Add click to copy CA address functionality
-            const caAddressElement = document.getElementById('ca-address');
-            if (caAddressElement) {
-                caAddressElement.addEventListener('click', function() {
-                    navigator.clipboard.writeText(caAddress).then(function() {
-                        // Show temporary feedback
-                        const originalText = caAddressElement.textContent;
-                        caAddressElement.textContent = 'CA copied!';
-                        caAddressElement.style.opacity = '1';
-                        caAddressElement.style.color = '#4CAF50';
-                        
-                        setTimeout(function() {
-                            caAddressElement.textContent = originalText;
-                            caAddressElement.style.opacity = '0.7';
-                            caAddressElement.style.color = '';
-                        }, 1500);
-                    }).catch(function(err) {
-                        console.error('Failed to copy CA address:', err);
-                        // Fallback for older browsers
-                        const textArea = document.createElement('textarea');
-                        textArea.value = caAddress;
-                        document.body.appendChild(textArea);
-                        textArea.select();
-                        document.execCommand('copy');
-                        document.body.removeChild(textArea);
-                        
-                        // Show feedback
-                        const originalText = caAddressElement.textContent;
-                        caAddressElement.textContent = 'CA copied!';
-                        caAddressElement.style.opacity = '1';
-                        caAddressElement.style.color = '#4CAF50';
-                        
-                        setTimeout(function() {
-                            caAddressElement.textContent = originalText;
-                            caAddressElement.style.opacity = '0.7';
-                            caAddressElement.style.color = '';
-                        }, 1500);
-                    });
-                });
+            if (onlineUsersSection) {
+                onlineUsersSection.addEventListener('click', toggleUsersPopup);
             }
             
-            // Header-only draggable functionality
-            let isDragging = false;
-            let startX, startY;
-            let startLeft, startTop;
-            const header = overlay.querySelector('.phantomview-header');
+            // --- USER PRESENCE TRACKING ---
+            function setUserOnline(username, caAddress) {
+                const sanitizedCA = caAddress.replace(/[^A-Za-z0-9]/g, '');
+                // Use a simple key for the username to avoid encoding issues
+                const userKey = username.replace(/[^A-Za-z0-9]/g, '_');
+                const userRef = `${firebaseConfig.databaseURL}/chats/${sanitizedCA}/onlineUsers/${userKey}.json`;
+                console.log('Setting user online:', username, 'at:', userRef);
+                fetch(userRef, {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ username: username, timestamp: Date.now() })
+                }).then(response => {
+                    if (response.ok) {
+                        console.log('User set online successfully:', username);
+                    } else {
+                        console.error('Failed to set user online:', response.status);
+                    }
+                }).catch(error => {
+                    console.error('Error setting user online:', error);
+                });
+            }
+
+            function setUserOffline(username, caAddress) {
+                const sanitizedCA = caAddress.replace(/[^A-Za-z0-9]/g, '');
+                // Use a simple key for the username to avoid encoding issues
+                const userKey = username.replace(/[^A-Za-z0-9]/g, '_');
+                const userRef = `${firebaseConfig.databaseURL}/chats/${sanitizedCA}/onlineUsers/${userKey}.json`;
+                console.log('Setting user offline:', username, 'at:', userRef);
+                fetch(userRef, { 
+                    method: 'DELETE',
+                    headers: { 'Content-Type': 'application/json' }
+                }).then(response => {
+                    if (response.ok) {
+                        console.log('User set offline successfully:', username);
+                    } else {
+                        console.error('Failed to set user offline:', response.status);
+                    }
+                }).catch(error => {
+                    console.error('Error setting user offline:', error);
+                });
+            }
+
+            function pollOnlineUsers(caAddress, updateCallback) {
+                const sanitizedCA = caAddress.replace(/[^A-Za-z0-9]/g, '');
+                const usersRef = `${firebaseConfig.databaseURL}/chats/${sanitizedCA}/onlineUsers.json`;
+                console.log('Starting to poll online users from:', usersRef);
+                
+                let lastUsernames = []; // Store last usernames to avoid unnecessary updates
+                
+                // Do an immediate fetch first
+                fetch(usersRef).then(r => r.json()).then(data => {
+                    console.log('Initial online users data:', data);
+                    if (data) {
+                        const usernames = Object.values(data).map(user => user.username).filter(Boolean);
+                        console.log('Initial usernames:', usernames);
+                        lastUsernames = usernames;
+                        updateCallback(usernames);
+                    } else {
+                        console.log('No initial online users data');
+                        lastUsernames = [];
+                        updateCallback([]);
+                    }
+                }).catch(error => {
+                    console.error('Error in initial fetch:', error);
+                    lastUsernames = [];
+                    updateCallback([]);
+                });
+                
+                // Store the interval ID so we can clear it later
+                const intervalId = setInterval(() => {
+                    fetch(usersRef).then(r => r.json()).then(data => {
+                        console.log('Online users data received:', data);
+                        if (data) {
+                            // Extract usernames from the user objects
+                            const usernames = Object.values(data).map(user => user.username).filter(Boolean);
+                            console.log('Extracted usernames:', usernames);
+                            
+                            // Only update if the usernames have actually changed
+                            if (JSON.stringify(usernames.sort()) !== JSON.stringify(lastUsernames.sort())) {
+                                console.log('Usernames changed, updating...');
+                                lastUsernames = usernames;
+                                updateCallback(usernames);
+                            } else {
+                                console.log('Usernames unchanged, skipping update');
+                            }
+                        } else {
+                            console.log('No online users data');
+                            if (lastUsernames.length > 0) {
+                                lastUsernames = [];
+                                updateCallback([]);
+                            }
+                        }
+                    }).catch(error => {
+                        console.error('Error polling online users:', error);
+                        // Only update if we had users before
+                        if (lastUsernames.length > 0) {
+                            lastUsernames = [];
+                            updateCallback([]);
+                        }
+                    });
+                }, 3000); // Increased to 3 seconds to reduce flickering
+                
+                // Store the interval ID globally so we can clear it when needed
+                window.onlineUsersPollingInterval = intervalId;
+                
+                // Return the interval ID for manual cleanup
+                return intervalId;
+            }
+
+            // --- USERNAME VALIDATION ---
+            function checkUsernameAvailability(username, caAddress, callback) {
+                const sanitizedCA = caAddress.replace(/[^A-Za-z0-9]/g, '');
+                const usersRef = `${firebaseConfig.databaseURL}/chats/${sanitizedCA}/onlineUsers.json`;
+                
+                fetch(usersRef).then(response => response.json()).then(data => {
+                    if (data) {
+                        // Check if username already exists
+                        const existingUsernames = Object.values(data).map(user => user.username).filter(Boolean);
+                        const isUsernameTaken = existingUsernames.includes(username);
+                        callback(!isUsernameTaken);
+                    } else {
+                        // No users online, username is available
+                        callback(true);
+                    }
+                }).catch(error => {
+                    console.error('Error checking username availability:', error);
+                    // If there's an error, allow the username (fail-safe)
+                    callback(true);
+                });
+            }
+
+            // --- INTEGRATE INTO CHATROOM UI ---
+            checkUsernameAvailability(username, caAddress, function(isAvailable) {
+                if (isAvailable) {
+                    setUserOnline(username, caAddress);
+                    
+                    // Multiple cleanup mechanisms for when user leaves
+                    function cleanupUser() {
+                        console.log('Cleaning up user:', username);
+                        setUserOffline(username, caAddress);
+                        
+                        // Clear the polling interval to stop updates
+                        if (window.onlineUsersPollingInterval) {
+                            console.log('Clearing online users polling interval');
+                            clearInterval(window.onlineUsersPollingInterval);
+                            window.onlineUsersPollingInterval = null;
+                        }
+                    }
+                    
+                    // Cleanup on page unload
+                    window.addEventListener('beforeunload', cleanupUser);
+                    
+                    // Cleanup on page visibility change (user switches tabs)
+                    document.addEventListener('visibilitychange', function() {
+                        if (document.visibilityState === 'hidden') {
+                            console.log('Page hidden, setting user offline');
+                            setUserOffline(username, caAddress);
+                        } else {
+                            console.log('Page visible, setting user online');
+                            setUserOnline(username, caAddress);
+                            
+                            // Restart polling if it was stopped
+                            if (!window.onlineUsersPollingInterval) {
+                                console.log('Restarting online users polling');
+                                pollOnlineUsers(caAddress, function(usernames) {
+                                    console.log('Online users received from Firebase:', usernames);
+                                    window.onlineUsernames = usernames;
+                                    const viewerCountElement = document.getElementById('viewer-count');
+                                    if (viewerCountElement) {
+                                        viewerCountElement.textContent = usernames.length;
+                                    }
+                                });
+                            }
+                        }
+                    });
+                    
+                    // Cleanup on extension close button
+                    const closeButton = document.getElementById('phantomview-close');
+                    if (closeButton) {
+                        const originalClick = closeButton.onclick;
+                        closeButton.addEventListener('click', function(e) {
+                            cleanupUser();
+                            if (originalClick) originalClick.call(this, e);
+                        });
+                    }
+                    
+                    // Cleanup on window focus/blur
+                    window.addEventListener('blur', function() {
+                        console.log('Window lost focus, setting user offline');
+                        setUserOffline(username, caAddress);
+                    });
+                    
+                    window.addEventListener('focus', function() {
+                        console.log('Window gained focus, setting user online');
+                        setUserOnline(username, caAddress);
+                    });
+                    
+                } else {
+                    // Username is taken, show error and close chatroom
+                    const errorMessage = document.createElement('div');
+                    errorMessage.className = 'message other system';
+                    errorMessage.innerHTML = `
+                        <div class="message-header">System</div>
+                        <div class="message-content" style="color: #ff6b6b;">⚠️ Username "${username}" is already taken. Please choose a different username.</div>
+                    `;
+                    const chatMessages = document.getElementById('chat-messages');
+                    chatMessages.appendChild(errorMessage);
+                    
+                    // Close the chatroom after 3 seconds
+                    setTimeout(() => {
+                        const closeButton = document.getElementById('phantomview-close');
+                        if (closeButton) {
+                            closeButton.click();
+                        }
+                    }, 3000);
+                    
+                    return; // Don't continue with chatroom setup
+                }
+            });
+
+            // Initialize global online users array and start polling (outside username validation)
+            window.onlineUsernames = [username];
             
-            header.addEventListener('mousedown', function(e) {
-                if (e.target.closest('#phantomview-close')) {
-                    return;
+            // Start polling for online users immediately
+            console.log('Starting initial polling for online users');
+            const pollingInterval = pollOnlineUsers(caAddress, function(usernames) {
+                console.log('Online users received from Firebase:', usernames);
+                console.log('Setting window.onlineUsernames to:', usernames);
+                window.onlineUsernames = usernames;
+                
+                // Calculate the actual viewer count (current user + other unique users)
+                const uniqueOtherUsers = [...new Set(usernames)].filter(user => user !== username);
+                const actualViewerCount = 1 + uniqueOtherUsers.length; // Current user + others
+                
+                // Update the online count in the UI
+                const viewerCountElement = document.getElementById('viewer-count');
+                if (viewerCountElement) {
+                    viewerCountElement.textContent = actualViewerCount;
+                    console.log('Updated viewer count to:', actualViewerCount);
                 }
                 
-                isDragging = true;
-                header.classList.add('dragging');
-                
-                const rect = overlay.getBoundingClientRect();
-                startX = e.clientX;
-                startY = e.clientY;
-                startLeft = rect.left;
-                startTop = rect.top;
-                
-                overlay.style.bottom = 'auto';
-                overlay.style.right = 'auto';
-                overlay.style.left = startLeft + 'px';
-                overlay.style.top = startTop + 'px';
+                // Debug: Log the current state
+                console.log('Current online users array:', window.onlineUsernames);
+                console.log('Unique other users:', uniqueOtherUsers);
+                console.log('Actual viewer count:', actualViewerCount);
+                console.log('Current viewer count element:', viewerCountElement);
             });
-            
-            document.addEventListener('mousemove', function(e) {
-                if (!isDragging) return;
+
+            // Send personal system message to the user when they join
+            function sendPersonalSystemMessage() {
+                const systemMessage = {
+                    username: 'System',
+                    message: 'Welcome to PhantomView, Official CA: UpDorZ5TkYPoXviYzYcC9SXMt6arT2caHm9epDbbonk',
+                    timestamp: Date.now(),
+                    type: 'system'
+                };
                 
-                e.preventDefault();
-                
-                const deltaX = e.clientX - startX;
-                const deltaY = e.clientY - startY;
-                
-                overlay.style.left = (startLeft + deltaX) + 'px';
-                overlay.style.top = (startTop + deltaY) + 'px';
-            });
-            
-            document.addEventListener('mouseup', function() {
-                if (isDragging) {
-                    isDragging = false;
-                    header.classList.remove('dragging');
+                // Add the system message to the chat for this user only
+                const chatMessages = document.getElementById('chat-messages');
+                if (chatMessages) {
+                    const messageElement = document.createElement('div');
+                    messageElement.className = 'message other system';
+                    messageElement.innerHTML = `
+                        <div class="message-header">System</div>
+                        <div class="message-content">Welcome to PhantomView, Official CA: <span id="official-ca" style="cursor: pointer; text-decoration: underline; color: #3B82F6;">UpDorZ5TkYPoXviYzYcC9SXMt6arT2caHm9epDbbonk</span></div>
+                    `;
+                    chatMessages.appendChild(messageElement);
+                    
+                    // Add click to copy functionality to the new system message
+                    const officialCAElement = messageElement.querySelector('#official-ca');
+                    if (officialCAElement) {
+                        officialCAElement.addEventListener('click', function() {
+                            const caAddress = 'UpDorZ5TkYPoXviYzYcC9SXMt6arT2caHm9epDbbonk';
+                            navigator.clipboard.writeText(caAddress).then(function() {
+                                // Show temporary feedback
+                                const originalText = officialCAElement.textContent;
+                                const originalColor = officialCAElement.style.color;
+                                officialCAElement.textContent = 'CA copied!';
+                                officialCAElement.style.color = '#10b981';
+                                
+                                setTimeout(function() {
+                                    officialCAElement.textContent = originalText;
+                                    officialCAElement.style.color = originalColor;
+                                }, 1500);
+                            }).catch(function(err) {
+                                console.error('Failed to copy official CA address:', err);
+                                // Fallback for older browsers
+                                const textArea = document.createElement('textarea');
+                                textArea.value = caAddress;
+                                document.body.appendChild(textArea);
+                                textArea.select();
+                                document.execCommand('copy');
+                                document.body.removeChild(textArea);
+                                
+                                // Show feedback
+                                const originalText = officialCAElement.textContent;
+                                const originalColor = officialCAElement.style.color;
+                                officialCAElement.textContent = 'CA copied!';
+                                officialCAElement.style.color = '#10b981';
+                                
+                                setTimeout(function() {
+                                    officialCAElement.textContent = originalText;
+                                    officialCAElement.style.color = originalColor;
+                                }, 1500);
+                            });
+                        });
+                    }
+                    
+                    // Scroll to the new message
+                    messageElement.scrollIntoView({ behavior: 'smooth' });
                 }
-            });
+            }
+
+            // Send the personal system message after a short delay
+            setTimeout(sendPersonalSystemMessage, 500);
         },
         args: [username, caAddress, coinName]
     });

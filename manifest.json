@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "PhantomView",
-  "version": "0.8.7",
+  "version": "1.0.0",
   "description": "Real-time viewer analytics & embedded chat for Solana trading platforms.",
   "permissions": [
     "activeTab",
@@ -38,7 +38,7 @@
   },
   "web_accessible_resources": [
     {
-      "resources": ["icons/PhantomViewtransparent.png", "firebase-config.js"],
+      "resources": ["icons/PhantomViewtransparent.png", "firebase-config.js", "security.js"],
       "matches": ["<all_urls>"]
     }
   ]

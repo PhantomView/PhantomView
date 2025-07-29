@@ -1,0 +1,372 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PhantomView Security Test</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        .test-section {
+            background: white;
+            padding: 20px;
+            margin: 20px 0;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .test-result {
+            padding: 10px;
+            margin: 10px 0;
+            border-radius: 4px;
+            font-family: monospace;
+        }
+        .pass {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+        .fail {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+        .warning {
+            background: #fff3cd;
+            color: #856404;
+            border: 1px solid #ffeaa7;
+        }
+        button {
+            background: #007bff;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 4px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        button:hover {
+            background: #0056b3;
+        }
+        input {
+            padding: 8px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            margin: 5px;
+            width: 200px;
+        }
+    </style>
+</head>
+<body>
+    <h1>🔒 PhantomView Security Test</h1>
+    
+    <div class="test-section">
+        <h2>Username Validation Tests</h2>
+        <input type="text" id="usernameInput" placeholder="Enter username to test">
+        <button onclick="testUsername()">Test Username</button>
+        <div id="usernameResults"></div>
+    </div>
+
+    <div class="test-section">
+        <h2>Message Validation Tests</h2>
+        <input type="text" id="messageInput" placeholder="Enter message to test">
+        <button onclick="testMessage()">Test Message</button>
+        <div id="messageResults"></div>
+    </div>
+
+    <div class="test-section">
+        <h2>CA Address Validation Tests</h2>
+        <input type="text" id="caInput" placeholder="Enter CA address to test">
+        <button onclick="testCA()">Test CA Address</button>
+        <div id="caResults"></div>
+    </div>
+
+    <div class="test-section">
+        <h2>Security Module Status</h2>
+        <button onclick="checkSecurityModule()">Check Security Module</button>
+        <div id="securityStatus"></div>
+    </div>
+
+    <div class="test-section">
+        <h2>Predefined Security Tests</h2>
+        <button onclick="runSecurityTests()">Run All Security Tests</button>
+        <div id="securityTests"></div>
+    </div>
+
+    <script>
+        // Mock security module for testing
+        class MockPhantomViewSecurity {
+            constructor() {
+                this.rateLimitMap = new Map();
+                this.blockedIPs = new Set();
+                this.suspiciousPatterns = [
+                    /<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi,
+                    /javascript:/gi,
+                    /on\w+\s*=/gi,
+                    /<iframe/gi,
+                    /<object/gi,
+                    /<embed/gi,
+                    /(\b(union|select|insert|update|delete|drop|create|alter)\b)/gi,
+                    /(\b(or|and)\b\s+\d+\s*=\s*\d+)/gi,
+                    /(\b(cmd|command|exec|system|shell)\b)/gi,
+                    /[;&|`$()]/g,
+                    /\.\.\//g,
+                    /\.\.\\/g,
+                    /(\b(wallet|seed|private key|mnemonic|passphrase)\b)/gi,
+                    /(\b(metamask|phantom|solflare|backpack)\b)/gi,
+                    /(\b(telegram|discord|twitter|t\.me|discord\.gg|t\.co)\b)/gi,
+                    /(\b(dm|private message|contact me|message me)\b)/gi,
+                    /(\b(airdrop|free|claim|reward|bonus|giveaway)\b)/gi,
+                    /(\b(click here|verify|confirm|claim now)\b)/gi,
+                    /(\b(email|phone|address|ssn|credit card)\b)/gi,
+                    /(\b(send me|dm me|contact)\b)/gi
+                ];
+                
+                this.maxMessageLength = 200;
+                this.maxUsernameLength = 20;
+                this.rateLimitWindow = 60000;
+                this.maxMessagesPerWindow = 10;
+                this.maxReactionsPerWindow = 20;
+            }
+
+            sanitizeInput(input, type = 'text') {
+                if (!input || typeof input !== 'string') {
+                    return '';
+                }
+
+                let sanitized = input.trim();
+                sanitized = sanitized.replace(/<[^>]*>/g, '');
+                sanitized = sanitized.replace(/<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi, '');
+                sanitized = sanitized.replace(/\s+/g, ' ');
+                sanitized = sanitized.replace(/[\x00-\x1F\x7F]/g, '');
+                
+                switch (type) {
+                    case 'username':
+                        sanitized = sanitized.replace(/[^a-zA-Z0-9_-]/g, '');
+                        sanitized = sanitized.substring(0, this.maxUsernameLength);
+                        break;
+                    case 'message':
+                        sanitized = sanitized.replace(/[<>]/g, '');
+                        sanitized = sanitized.substring(0, this.maxMessageLength);
+                        break;
+                    case 'ca_address':
+                        sanitized = sanitized.replace(/[^A-Za-z0-9]/g, '');
+                        break;
+                }
+
+                return sanitized;
+            }
+
+            containsSuspiciousContent(input) {
+                if (!input || typeof input !== 'string') {
+                    return false;
+                }
+
+                const lowerInput = input.toLowerCase();
+                
+                for (const pattern of this.suspiciousPatterns) {
+                    if (pattern.test(lowerInput)) {
+                        return true;
+                    }
+                }
+
+                const repeatedChars = /(.)\1{4,}/;
+                if (repeatedChars.test(input)) {
+                    return true;
+                }
+
+                const capsRatio = (input.match(/[A-Z]/g) || []).length / input.length;
+                if (capsRatio > 0.7 && input.length > 10) {
+                    return true;
+                }
+
+                return false;
+            }
+
+            validateUsername(username) {
+                if (!username || typeof username !== 'string') {
+                    return { valid: false, error: 'Username is required' };
+                }
+
+                const sanitized = this.sanitizeInput(username, 'username');
+                
+                if (sanitized.length < 2) {
+                    return { valid: false, error: 'Username must be at least 2 characters' };
+                }
+                
+                if (sanitized.length > this.maxUsernameLength) {
+                    return { valid: false, error: `Username must be ${this.maxUsernameLength} characters or less` };
+                }
+                
+                if (this.containsSuspiciousContent(sanitized)) {
+                    return { valid: false, error: 'Username contains invalid characters' };
+                }
+                
+                const reservedNames = ['admin', 'moderator', 'system', 'phantomview', 'phantom', 'view'];
+                if (reservedNames.includes(sanitized.toLowerCase())) {
+                    return { valid: false, error: 'Username is reserved' };
+                }
+                
+                return { valid: true, username: sanitized };
+            }
+
+            validateMessage(message, userId) {
+                if (!message || typeof message !== 'string') {
+                    return { valid: false, error: 'Message is required' };
+                }
+
+                const sanitized = this.sanitizeInput(message, 'message');
+                
+                if (sanitized.length < 1) {
+                    return { valid: false, error: 'Message cannot be empty' };
+                }
+                
+                if (sanitized.length > this.maxMessageLength) {
+                    return { valid: false, error: `Message must be ${this.maxMessageLength} characters or less` };
+                }
+                
+                if (this.containsSuspiciousContent(sanitized)) {
+                    return { valid: false, error: 'Message contains potentially unsafe content' };
+                }
+                
+                return { valid: true, message: sanitized };
+            }
+
+            validateCAAddress(caAddress) {
+                if (!caAddress || typeof caAddress !== 'string') {
+                    return { valid: false, error: 'CA address is required' };
+                }
+
+                const sanitized = this.sanitizeInput(caAddress, 'ca_address');
+                
+                if (!/^[A-Za-z0-9]{32,44}$/.test(sanitized)) {
+                    return { valid: false, error: 'Invalid CA address format' };
+                }
+                
+                return { valid: true, caAddress: sanitized };
+            }
+        }
+
+        const security = new MockPhantomViewSecurity();
+
+        function testUsername() {
+            const input = document.getElementById('usernameInput').value;
+            const result = security.validateUsername(input);
+            const resultsDiv = document.getElementById('usernameResults');
+            
+            const resultDiv = document.createElement('div');
+            resultDiv.className = `test-result ${result.valid ? 'pass' : 'fail'}`;
+            resultDiv.innerHTML = `
+                <strong>Input:</strong> "${input}"<br>
+                <strong>Result:</strong> ${result.valid ? 'PASS' : 'FAIL'}<br>
+                <strong>Message:</strong> ${result.valid ? result.username : result.error}
+            `;
+            
+            resultsDiv.appendChild(resultDiv);
+        }
+
+        function testMessage() {
+            const input = document.getElementById('messageInput').value;
+            const result = security.validateMessage(input, 'testuser');
+            const resultsDiv = document.getElementById('messageResults');
+            
+            const resultDiv = document.createElement('div');
+            resultDiv.className = `test-result ${result.valid ? 'pass' : 'fail'}`;
+            resultDiv.innerHTML = `
+                <strong>Input:</strong> "${input}"<br>
+                <strong>Result:</strong> ${result.valid ? 'PASS' : 'FAIL'}<br>
+                <strong>Message:</strong> ${result.valid ? result.message : result.error}
+            `;
+            
+            resultsDiv.appendChild(resultDiv);
+        }
+
+        function testCA() {
+            const input = document.getElementById('caInput').value;
+            const result = security.validateCAAddress(input);
+            const resultsDiv = document.getElementById('caResults');
+            
+            const resultDiv = document.createElement('div');
+            resultDiv.className = `test-result ${result.valid ? 'pass' : 'fail'}`;
+            resultDiv.innerHTML = `
+                <strong>Input:</strong> "${input}"<br>
+                <strong>Result:</strong> ${result.valid ? 'PASS' : 'FAIL'}<br>
+                <strong>Message:</strong> ${result.valid ? result.caAddress : result.error}
+            `;
+            
+            resultsDiv.appendChild(resultDiv);
+        }
+
+        function checkSecurityModule() {
+            const statusDiv = document.getElementById('securityStatus');
+            statusDiv.innerHTML = `
+                <div class="test-result pass">
+                    <strong>Security Module Status:</strong> ACTIVE<br>
+                    <strong>Max Message Length:</strong> ${security.maxMessageLength}<br>
+                    <strong>Max Username Length:</strong> ${security.maxUsernameLength}<br>
+                    <strong>Rate Limit Window:</strong> ${security.rateLimitWindow}ms<br>
+                    <strong>Suspicious Patterns:</strong> ${security.suspiciousPatterns.length} patterns loaded
+                </div>
+            `;
+        }
+
+        function runSecurityTests() {
+            const testsDiv = document.getElementById('securityTests');
+            testsDiv.innerHTML = '';
+
+            const tests = [
+                // Username tests
+                { type: 'username', input: 'admin', expected: false, description: 'Reserved username' },
+                { type: 'username', input: 'a', expected: false, description: 'Too short' },
+                { type: 'username', input: 'valid_user123', expected: true, description: 'Valid username' },
+                { type: 'username', input: 'user<script>alert("xss")</script>', expected: false, description: 'XSS attempt' },
+                
+                // Message tests
+                { type: 'message', input: 'Hello world', expected: true, description: 'Valid message' },
+                { type: 'message', input: 'javascript:alert("xss")', expected: false, description: 'JavaScript injection' },
+                { type: 'message', input: 'UNION SELECT * FROM users', expected: false, description: 'SQL injection' },
+                { type: 'message', input: 'Check out my telegram: t.me/scam', expected: false, description: 'Social media link' },
+                { type: 'message', input: 'FREE AIRDROP! Claim now!', expected: false, description: 'Scam content' },
+                { type: 'message', input: 'AAAAA', expected: false, description: 'Repeated characters' },
+                { type: 'message', input: 'THIS IS ALL CAPS MESSAGE', expected: false, description: 'Excessive caps' },
+                
+                // CA address tests
+                { type: 'ca_address', input: 'UcNEqoS1XDocaXs93YGLD4yMUfApTCyrrjVPWQXbonk', expected: true, description: 'Valid CA address' },
+                { type: 'ca_address', input: 'invalid-address', expected: false, description: 'Invalid format' },
+                { type: 'ca_address', input: '123', expected: false, description: 'Too short' }
+            ];
+
+            tests.forEach(test => {
+                let result;
+                switch (test.type) {
+                    case 'username':
+                        result = security.validateUsername(test.input);
+                        break;
+                    case 'message':
+                        result = security.validateMessage(test.input, 'testuser');
+                        break;
+                    case 'ca_address':
+                        result = security.validateCAAddress(test.input);
+                        break;
+                }
+
+                const resultDiv = document.createElement('div');
+                resultDiv.className = `test-result ${result.valid === test.expected ? 'pass' : 'fail'}`;
+                resultDiv.innerHTML = `
+                    <strong>Test:</strong> ${test.description}<br>
+                    <strong>Input:</strong> "${test.input}"<br>
+                    <strong>Expected:</strong> ${test.expected ? 'PASS' : 'FAIL'}<br>
+                    <strong>Actual:</strong> ${result.valid ? 'PASS' : 'FAIL'}<br>
+                    <strong>Message:</strong> ${result.valid ? 'Valid' : result.error}
+                `;
+                
+                testsDiv.appendChild(resultDiv);
+            });
+        }
+    </script>
+</body>
+</html>

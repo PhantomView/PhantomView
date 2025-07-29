@@ -1,0 +1,36 @@
+{
+  "rules": {
+    "viewers": {
+      "$ca": {
+        "count": {
+          ".read": true,
+          ".write": true
+        }
+      }
+    },
+    "chats": {
+      "$ca": {
+        "messages": {
+          ".read": true,
+          ".write": true
+        },
+        "activeMessages": {
+          ".read": true,
+          ".write": true,
+          "$messageKey": {
+            "reactions": {
+              "$reaction": {
+                ".read": true,
+                ".write": true
+              }
+            }
+          }
+        },
+        "onlineUsers": {
+          ".read": true,
+          ".write": true
+        }
+      }
+    }
+  }
+} 
