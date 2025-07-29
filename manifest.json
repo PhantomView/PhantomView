@@ -38,7 +38,7 @@
   },
   "web_accessible_resources": [
     {
-      "resources": ["icons/PhantomViewtransparent.png", "firebase-config.js", "security.js"],
+      "resources": ["icons/PhantomViewtransparent.png", "firebase-config.js", "firebase-secure-config.js", "security.js"],
       "matches": ["<all_urls>"]
     }
   ]

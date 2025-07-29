@@ -1784,7 +1784,7 @@ function openChatroom(tabId, username, caAddress, coinName) {
             
             // Firebase chat functionality
             const firebaseConfig = {
-                apiKey: "AIzaSyCZvGEWyk_bcw-G0Ath48GNDL9eNRvpugc",
+                apiKey: "FIREBASE_API_KEY_PLACEHOLDER", // Removed exposed key - will be loaded securely
                 authDomain: "phantomview-339cd.firebaseapp.com",
                 databaseURL: "https://phantomview-339cd-default-rtdb.firebaseio.com",
                 projectId: "phantomview-339cd",
